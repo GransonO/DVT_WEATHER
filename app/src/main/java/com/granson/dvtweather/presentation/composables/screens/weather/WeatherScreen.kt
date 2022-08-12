@@ -28,6 +28,7 @@ import kotlin.math.roundToInt
 fun WeatherScreen(navController: NavController) {
 
     val todayWeather = dailyWeather.value[0].temp
+    selectedWeatherEnums.value = Common.mainWeatherEnums.value
 
     Surface(
         modifier = Modifier.fillMaxSize(),

@@ -1,6 +1,8 @@
 package com.granson.dvtweather.presentation.composables.screens.viewModels
 
 import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkInfo
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.lifecycle.ViewModel
@@ -10,12 +12,17 @@ import com.granson.dvtweather.R
 import com.granson.dvtweather.data.models.places.autocomplete.AutoComplete
 import com.granson.dvtweather.data.models.weather.Weather
 import com.granson.dvtweather.data.repository.Resource
+import com.granson.dvtweather.data.repository.repos.DataRepository
 import com.granson.dvtweather.data.repository.repos.PlaceRepository
 import com.granson.dvtweather.data.repository.repos.WeatherRepository
+import com.granson.dvtweather.presentation.composables.screens.viewModels.models.PlaceLocation
 import com.granson.dvtweather.presentation.composables.screens.viewModels.models.RequestState
 import com.granson.dvtweather.presentation.composables.screens.viewModels.models.SavedPlace
 import com.granson.dvtweather.utils.Common.baseLogger
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -25,19 +32,32 @@ import javax.inject.Inject
 @HiltViewModel
 class ScreensViewModel @Inject constructor(
     private val weatherRepository: WeatherRepository,
-    private val placeRepository: PlaceRepository
+    private val placeRepository: PlaceRepository,
+    private val dataRepository: DataRepository
 ): ViewModel() {
 
     private var _currentWeather = MutableStateFlow(RequestState())
     var  currentWeather= _currentWeather.asSharedFlow()
 
     val queryPlaces = mutableStateOf(AutoComplete())
-    val listSavedPlaces = mutableStateOf(listOf(SavedPlace()))
+    val listSavedPlaces = mutableStateOf(listOf<SavedPlace>())
     val selectedPlace = mutableStateOf(SavedPlace())
 
     val isRequesting =  mutableStateOf(false)
+
     private val _placeDetails = MutableStateFlow(SavedPlace())
     val placeDetails = _placeDetails.asSharedFlow()
+
+    val isAddedSuccess = mutableStateOf(false)
+    val isUpdated = mutableStateOf(false)
+    val isDeleted = mutableStateOf(false)
+
+    fun getInternetStatus(context: Context): Boolean {
+        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        var activeNetworkInfo: NetworkInfo? = null
+        activeNetworkInfo = cm.activeNetworkInfo
+        return activeNetworkInfo != null && activeNetworkInfo.isConnectedOrConnecting
+    }
 
     fun getWeatherInfo(
         lat: Float,
@@ -128,7 +148,7 @@ class ScreensViewModel @Inject constructor(
                         if(place != null){
                             _placeDetails.emit(
                                 SavedPlace(
-                                    location = LatLng(place.result.geometry.location.lat, place.result.geometry.location.lng),
+                                    location = PlaceLocation(place.result.geometry.location.lat, place.result.geometry.location.lng),
                                     name = place.result.name,
                                     placeId = placeId
                                 )
@@ -147,28 +167,69 @@ class ScreensViewModel @Inject constructor(
     }
 
     fun getSavedPlaces(){
-        viewModelScope.launch {
-            delay(3000)
-            listSavedPlaces.value = listOf(
-                SavedPlace(
-                    location = LatLng(-1.2255328,36.2962995),
-                    name = "Westlands",
-                    lastWeatherID = 200,
-                    date = "Last Update 21 June, 2022"
-                ),
-                SavedPlace(
-                    location = LatLng(-1.3458328,36.4970995),
-                    name = "Kilimani",
-                    lastWeatherID = 500,
-                    date = "Last Update 23 June, 2022"
-                ),
-                SavedPlace(
-                    location = LatLng(-1.2895328,36.8972995),
-                    name = "Kilieleshwa",
-                    lastWeatherID = 800,
-                    date = "Last Update 26 June, 2022"
-                ),
-            )
+        CoroutineScope(Dispatchers.IO).launch {
+            dataRepository.getAllFavouritePlaces().collect{
+                when (it) {
+                    is Resource.Success -> {
+                        baseLogger("The Saved Places are", it.data)
+                        val value = it.data
+                        if(value != null){
+                            listSavedPlaces.value = value
+                        }
+                    }
+                    else -> {
+                        baseLogger("The Saved Places error", it.message)}
+                }
+            }
+        }
+    }
+
+    fun savePlace(place: SavedPlace){
+
+        CoroutineScope(Dispatchers.IO).launch {
+            dataRepository.addFavouritePlace(place).collect{
+                when (it) {
+                    is Resource.Success -> {
+
+                        baseLogger("The Saved Places Yay", it.data)
+                        getSavedPlaces()
+                        isAddedSuccess.value = true
+                    }
+                    else -> {
+                        baseLogger("The Saved Places error", it.message)
+                    }
+                }
+            }
+        }
+    }
+
+    fun updatePlace(place: SavedPlace){
+        CoroutineScope(Dispatchers.IO).launch {
+            dataRepository.updateFavouritePlaces(place).collect{
+                when (it) {
+                    is Resource.Success -> {
+                        baseLogger("The Places Updated", it.data)
+                        isUpdated.value = true
+                    }
+                    else -> {}
+                }
+            }
+        }
+    }
+
+    fun deletePlace(place: SavedPlace){
+        CoroutineScope(Dispatchers.IO).launch {
+            dataRepository.deleteFavouritePlaces(place).collect{
+                when (it) {
+                    is Resource.Success -> {
+
+                        baseLogger("The Place deleted", it.data)
+                        getSavedPlaces()
+                        isDeleted.value = true
+                    }
+                    else -> {}
+                }
+            }
         }
     }
 }

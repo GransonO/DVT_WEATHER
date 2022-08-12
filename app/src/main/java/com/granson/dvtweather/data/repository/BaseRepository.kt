@@ -1,5 +1,6 @@
 package com.granson.dvtweather.data.repository
 
+import com.granson.dvtweather.utils.Common.baseLogger
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import retrofit2.HttpException
@@ -50,6 +51,18 @@ abstract class BaseRepository {
                         )
                     )
                 }
+            }
+        }
+    }
+
+    suspend fun <T> databaseCall(dbCall: suspend () -> T ): Flow<Resource<T>> {
+        return flow {
+            try {
+                emit(Resource.Success(data = dbCall.invoke()))
+            }catch (e: Exception){
+
+                e.printStackTrace()
+                emit(Resource.Error(message = "${e.message}"))
             }
         }
     }

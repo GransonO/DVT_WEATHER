@@ -32,6 +32,7 @@ object Common {
 
     const val UPDATE_INTERVAL = 5000L
     const val FASTEST_UPDATE_INTERVAL = 5000L
+    const val DB_VERSION = 1
 
     fun baseLogger(title: String, value: Any?) {
         Log.e(title, " Value -> $value")
@@ -78,6 +79,13 @@ object Common {
         daysList.add(days[currentIndex])
 
         return daysList
+    }
+
+    @SuppressLint("SimpleDateFormat")
+    val getCurrentDate =  {
+        val sdf = SimpleDateFormat("d MMM, yyyy")
+        val d = Date()
+        sdf.format(d)
     }
 
 }

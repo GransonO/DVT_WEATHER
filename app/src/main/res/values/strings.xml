@@ -4,5 +4,4 @@
     <string name="maps_screen">Places</string>
     <string name="maps_api_key"></string>
     <string name="weather_api_key"></string>
-    <string name="preference_file_key">dvt_shared_prefs</string>
 </resources>
