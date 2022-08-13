@@ -2,15 +2,12 @@ package com.granson.dvtweather.presentation.composables.screens.viewModels
 
 import android.content.Context
 import android.net.ConnectivityManager
-import android.net.NetworkInfo
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.android.gms.maps.model.LatLng
 import com.granson.dvtweather.R
 import com.granson.dvtweather.data.models.places.autocomplete.AutoComplete
-import com.granson.dvtweather.data.models.weather.Weather
 import com.granson.dvtweather.data.repository.Resource
 import com.granson.dvtweather.data.repository.repos.DataRepository
 import com.granson.dvtweather.data.repository.repos.PlaceRepository
@@ -20,7 +17,6 @@ import com.granson.dvtweather.presentation.composables.screens.viewModels.models
 import com.granson.dvtweather.presentation.composables.screens.viewModels.models.SavedPlace
 import com.granson.dvtweather.utils.Common.baseLogger
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -43,19 +39,23 @@ class ScreensViewModel @Inject constructor(
     val listSavedPlaces = mutableStateOf(listOf<SavedPlace>())
     val selectedPlace = mutableStateOf(SavedPlace())
 
+    val isPlaceSelected = mutableStateOf(false)
+
     val isRequesting =  mutableStateOf(false)
+    val isLoading =  mutableStateOf(true)
 
     private val _placeDetails = MutableStateFlow(SavedPlace())
     val placeDetails = _placeDetails.asSharedFlow()
 
     val isAddedSuccess = mutableStateOf(false)
-    val isUpdated = mutableStateOf(false)
+    private val isUpdated = mutableStateOf(false)
     val isDeleted = mutableStateOf(false)
+    val dbRequestError = mutableStateOf(false)
+    val requestError = mutableStateOf(false)
 
     fun getInternetStatus(context: Context): Boolean {
         val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        var activeNetworkInfo: NetworkInfo? = null
-        activeNetworkInfo = cm.activeNetworkInfo
+        val activeNetworkInfo = cm.activeNetworkInfo
         return activeNetworkInfo != null && activeNetworkInfo.isConnectedOrConnecting
     }
 
@@ -173,6 +173,7 @@ class ScreensViewModel @Inject constructor(
                     is Resource.Success -> {
                         baseLogger("The Saved Places are", it.data)
                         val value = it.data
+                        isLoading.value = false
                         if(value != null){
                             listSavedPlaces.value = value
                         }
@@ -190,13 +191,13 @@ class ScreensViewModel @Inject constructor(
             dataRepository.addFavouritePlace(place).collect{
                 when (it) {
                     is Resource.Success -> {
-
                         baseLogger("The Saved Places Yay", it.data)
                         getSavedPlaces()
                         isAddedSuccess.value = true
                     }
                     else -> {
                         baseLogger("The Saved Places error", it.message)
+                        dbRequestError.value = true
                     }
                 }
             }
@@ -209,9 +210,12 @@ class ScreensViewModel @Inject constructor(
                 when (it) {
                     is Resource.Success -> {
                         baseLogger("The Places Updated", it.data)
+                        getSavedPlaces()
                         isUpdated.value = true
                     }
-                    else -> {}
+                    else -> {
+                        dbRequestError.value = true
+                    }
                 }
             }
         }
@@ -227,7 +231,9 @@ class ScreensViewModel @Inject constructor(
                         getSavedPlaces()
                         isDeleted.value = true
                     }
-                    else -> {}
+                    else -> {
+                        dbRequestError.value = true
+                    }
                 }
             }
         }

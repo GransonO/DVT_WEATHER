@@ -9,12 +9,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
-import com.granson.dvtweather.presentation.*
-import com.granson.dvtweather.presentation.composables.screens.viewModels.ScreensViewModel
+import com.granson.dvtweather.presentation.composables.*
 import com.granson.dvtweather.utils.Common
 import com.granson.dvtweather.utils.Common.baseLogger
 import com.granson.dvtweather.utils.Common.currentTemp
@@ -25,7 +21,7 @@ import com.granson.dvtweather.utils.Common.userLocationDetails
 import kotlin.math.roundToInt
 
 @Composable
-fun WeatherScreen(navController: NavController) {
+fun WeatherScreen() {
 
     val todayWeather = dailyWeather.value[0].temp
     selectedWeatherEnums.value = Common.mainWeatherEnums.value
@@ -84,7 +80,7 @@ fun WeatherScreen(navController: NavController) {
                                 temp = it.temp.max.roundToInt().toString()
                             )
                         }
-                        Spacer(Modifier.height(16.dp))
+                        Spacer(Modifier.height(100.dp))
                     }
                 }
             }

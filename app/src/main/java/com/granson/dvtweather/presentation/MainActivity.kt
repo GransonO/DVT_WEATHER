@@ -26,7 +26,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -41,12 +40,16 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.google.android.gms.maps.model.LatLng
 import com.granson.dvtweather.data.models.LocationDetails
+import com.granson.dvtweather.presentation.composables.backgroundColor
+import com.granson.dvtweather.presentation.composables.backgroundColorExt
+import com.granson.dvtweather.presentation.composables.imageToDisplay
 import com.granson.dvtweather.presentation.composables.screens.maps.MapsScreen
 import com.granson.dvtweather.presentation.composables.screens.viewModels.ScreensViewModel
 import com.granson.dvtweather.presentation.composables.screens.weather.WeatherScreen
 import com.granson.dvtweather.presentation.navigation.DVTScreens
 import com.granson.dvtweather.presentation.navigation.Screen
 import com.granson.dvtweather.ui.theme.DVTWeatherTheme
+import com.granson.dvtweather.ui.theme.Typography
 import com.granson.dvtweather.utils.Common.baseLogger
 import com.granson.dvtweather.utils.Common.currentTemp
 import com.granson.dvtweather.utils.Common.dailyWeather
@@ -59,9 +62,8 @@ import com.granson.dvtweather.utils.Common.selectedWeatherEnums
 import com.granson.dvtweather.utils.Common.userCurrentLocation
 import com.granson.dvtweather.utils.Common.userLocationDetails
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
 import java.util.*
 import kotlin.math.roundToInt
 
@@ -85,51 +87,70 @@ class MainActivity : ComponentActivity() {
 
                 val context = LocalContext.current
                 val scope = rememberCoroutineScope()
+                val isOffline = remember { mutableStateOf(false) }
                 val starterState = remember { mutableStateOf(true) }
-                val fetchingMessage = remember { mutableStateOf("Fetching your current location, gimme a sec...") }
+                val hasInternet = remember { mutableStateOf(true) }
+                val fetchingMessage = remember { mutableStateOf("...") }
 
                 val weatherState = remember { mutableStateOf(selectedWeatherEnums.value) }
                 val screensViewModel = hiltViewModel<ScreensViewModel>()
 
+                LaunchedEffect(key1 = "Fetch Saved Places"){
+                    // Fetch List
+                    screensViewModel.getSavedPlaces()
+                }
+
                 val current = {
                     scope.launch {
+
+                        baseLogger("The statement", fetchingMessage.value)
                         screensViewModel.getWeatherInfo(
                             lat = userCurrentLocation.latitude.toFloat(),
                             lon = userCurrentLocation.longitude.toFloat(),
                             context = context
                         )
                         screensViewModel.currentWeather.collect {
-                            baseLogger("Anything yet", it.toString())
-                            val value = it.data
-                            if(value != null){
-                                currentTemp.value = value.current.temp.roundToInt().toString()
-                                weatherState.value = getWeatherEnum(value.current.weather[0].id)
-                                dailyWeather.value = value.daily
-                                selectedWeatherEnums.value = weatherState.value
-                                mainWeatherEnums.value = selectedWeatherEnums.value // Never Changing
-                                selectedPlaceWeatherEnums.value = selectedWeatherEnums.value // Change with selected Place
+                                baseLogger("Anything yet", it.toString())
+                                val value = it.data
+                                if(value != null){
+                                    currentTemp.value = value.current.temp.roundToInt().toString()
+                                    weatherState.value = getWeatherEnum(value.current.weather[0].id)
+                                    dailyWeather.value = value.daily
+                                    selectedWeatherEnums.value = weatherState.value
+                                    mainWeatherEnums.value = selectedWeatherEnums.value // Never Changing
+                                    selectedPlaceWeatherEnums.value = selectedWeatherEnums.value // Change with selected Place
 
-                                delay(2000)
-                                mainViewModel.isLocationAcquired.value = true // Navigate to Home page
+                                    delay(2000)
+                                    isOffline.value = false
+                                    mainViewModel.isLocationAcquired.value = true // Navigate to Home page
 
+                                }
                             }
-                        }
                     }
                 }
 
                 val makeLocationRequest = {
                     scope.launch {
                         // Fetch Current Location
-                        delay(2000)
-                        mainViewModel.getCurrentLocation().collectLatest {
-                            if(locationCount == 0){
-                                locationCount = 1
-                                userCurrentLocation = LatLng(it.latitude, it.longitude)
-                                geoCodeLocation(context, it.latitude, it.longitude)
-                                fetchingMessage.value = "Got the location,\n${userLocationDetails.value.address}\nHang in there, sourcing for weather info..."
 
-                                current.invoke()
+                        fetchingMessage.value = "Fetching your current location, gimme a sec..."
+                        delay(2000)
+
+                        if(screensViewModel.getInternetStatus(context)){
+                            mainViewModel.getCurrentLocation().collectLatest {
+                                if(locationCount == 0){
+                                    locationCount = 1
+                                    userCurrentLocation = LatLng(it.latitude, it.longitude)
+                                    CoroutineScope(Dispatchers.IO).launch {
+                                        geoCodeLocation(context, it.latitude, it.longitude){
+                                            fetchingMessage.value = "Got the location,\n\n${userLocationDetails.value.address}\n\nHang in there, sourcing for weather info..."
+                                            current.invoke()
+                                        }
+                                    }
+                                }
                             }
+                        }else{
+                            hasInternet.value = false
                         }
                     }
                 }
@@ -153,6 +174,12 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
+                val launcher = rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.RequestMultiplePermissions()
+                ) { maps ->
+                    mainViewModel.hasPermissions.value = maps.values.reduce { acc, next -> (acc && next) }
+                }
+
                 if(starterState.value){
                     StarterPage(
                         firstText = "",
@@ -168,19 +195,85 @@ class MainActivity : ComponentActivity() {
                     }else{
                         if(mainViewModel.hasPermissions.value){
                             // Permissions granted
-                            StarterPage(
-                                firstText = "Hello there,",
-                                secondText = fetchingMessage.value,
-                                showButton = false
-                            )
-                            makeLocationRequest.invoke() // Get current location
+                            if(!hasInternet.value){
+                                if(screensViewModel.listSavedPlaces.value.isNotEmpty()){
+                                    // Has saved data
+                                    StarterPage(
+                                        firstText = "Oh,",
+                                        secondText = "Looks like there no Internet connection! Would you like to start offline mode?",
+                                        showButton = true,
+                                        buttonText = "Lets go offline",
+                                        onClick = {
+                                            isOffline.value = true
+                                        }
+                                    )
+                                }else{
+                                    StarterPage(
+                                        firstText = "Yikes!!!,",
+                                        secondText = "Oops, looks like there no Internet connection! Please check your network and try again",
+                                        showButton = true,
+                                        buttonText = "Retry",
+                                        onClick = {
+                                            makeLocationRequest.invoke()
+                                        }
+                                    )
+                                }
+                            }else{
+
+                                StarterPage(
+                                    firstText = "Hello there,",
+                                    secondText = fetchingMessage.value,
+                                    showButton = false
+                                )
+                                if(locationCount != 1){
+                                    // Invoke once upon render
+                                    makeLocationRequest.invoke() // Get current location
+                                }
+                            }
 
                         }else{
                             // First Timer
                             StarterPage(
                                 firstText = "Lets get you started.",
-                                secondText = "Click on the button below to get your weather details."
+                                secondText = "Click on the button below to get your weather details.",
+                                onClick = {
+                                    launcher.launch(neededPermissions)
+                                }
                             )
+                        }
+                    }
+                }
+
+                if(isOffline.value){
+                    Box(
+                        modifier = Modifier.fillMaxSize()
+                    ){
+                        MapsScreen(
+                            isOffline = true
+                        )
+
+                        if(screensViewModel.getInternetStatus(context)){
+                            Card(
+                                modifier = Modifier.fillMaxWidth().align(alignment = Alignment.BottomCenter).padding(bottom = 5.dp, start = 16.dp, end = 16.dp).clickable {
+                                    makeLocationRequest.invoke()
+                                },
+                                backgroundColor = backgroundColorExt(selectedWeatherEnums.value),
+                                border = BorderStroke(
+                                    width = 1.dp,
+                                    color = backgroundColorExt(selectedWeatherEnums.value),
+                                ),
+                                shape = RoundedCornerShape(10.dp)
+                            ){
+                                Text(
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp),
+                                    text = "Network available, go online",
+                                    style = Typography.body1.copy(
+                                        color = Color.White,
+                                        fontSize = 18.sp
+                                    ),
+                                    textAlign = TextAlign.Center
+                                )
+                            }
                         }
                     }
                 }
@@ -193,16 +286,11 @@ class MainActivity : ComponentActivity() {
         firstText: String,
         secondText: String,
         showButton: Boolean = true,
-        headerText: String = "DVT Weather,"
+        buttonText: String = "Let's Start",
+        headerText: String = "DVT Weather,",
+        onClick: () -> Unit = {}
     ){
-
-        val launcher = rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.RequestMultiplePermissions()
-        ) { maps ->
-            mainViewModel.hasPermissions.value = maps.values.reduce { acc, next -> (acc && next) }
-        }
-
-        Scaffold(
+        Column (
             modifier = Modifier.fillMaxSize()
         ){
             Box(
@@ -228,15 +316,15 @@ class MainActivity : ComponentActivity() {
                         Text(
                             modifier = Modifier.padding(top = 55.dp),
                             text = headerText,
-                            style = TextStyle(
+                            style = Typography.body1.copy(
                                 color = Color.White,
-                                fontSize = 35.sp
+                                fontSize = 35.sp,
                             )
                         )
                         Text(
                             modifier = Modifier.padding(top = 25.dp),
                             text = firstText,
-                            style = TextStyle(
+                            style = Typography.body1.copy(
                                 color = Color.White,
                                 fontSize = 25.sp
                             )
@@ -244,7 +332,7 @@ class MainActivity : ComponentActivity() {
                         Text(
                             modifier = Modifier.padding(top = 5.dp),
                             text = secondText,
-                            style = TextStyle(
+                            style = Typography.body1.copy(
                                 color = Color.White,
                                 fontSize = 18.sp
                             )
@@ -253,22 +341,22 @@ class MainActivity : ComponentActivity() {
 
                     if (showButton)
                         Card(
-                            modifier = Modifier.fillMaxWidth().padding(bottom = 55.dp).clickable {
-                                 launcher.launch(neededPermissions)
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 55.dp, start = 16.dp, end = 16.dp).clickable {
+                                 onClick.invoke()
                             },
                             backgroundColor = Color.White,
                             border = BorderStroke(
-                                width = 2.dp,
+                                width = 1.dp,
                                 color = backgroundColorExt(selectedWeatherEnums.value),
                             ),
-                            shape = RoundedCornerShape(100.dp)
+                            shape = RoundedCornerShape(50.dp)
                         ){
                             Text(
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp),
-                                text = "Let's Start",
-                                style = TextStyle(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                                text = buttonText,
+                                style = Typography.body1.copy(
                                     color = backgroundColorExt(selectedWeatherEnums.value),
-                                    fontSize = 25.sp,
+                                    fontSize = 20.sp,
                                     fontWeight = FontWeight.SemiBold
                                 ),
                                 textAlign = TextAlign.Center
@@ -293,13 +381,12 @@ class MainActivity : ComponentActivity() {
     fun HomePage(){
 
         val navController = rememberNavController()
-        val scaffoldStateR = rememberScaffoldState()
         LaunchedEffect("Update MapScope Theme"){
             selectedPlaceWeatherEnums.value = selectedWeatherEnums.value
         }
 
         Scaffold(
-            scaffoldState = scaffoldStateR,
+            backgroundColor = backgroundColorExt(selectedWeatherEnums.value),
             bottomBar = {
                 BottomNavigation(
                     backgroundColor = backgroundColor(selectedWeatherEnums.value)
@@ -312,7 +399,7 @@ class MainActivity : ComponentActivity() {
                             icon = { Icon(painterResource(screen.Icon), contentDescription = null, tint = if(isSelected) Color.White else Color.Black) },
                             label = { Text(
                                 text = stringResource(screen.stringId),
-                                style = TextStyle(
+                                style = Typography.body1.copy(
                                     fontSize = 12.sp,
                                     color = if(isSelected) Color.White else Color.Black,
                                     fontWeight = FontWeight.SemiBold
@@ -332,10 +419,29 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
-        ){
-            NavHost(navController, startDestination = Screen.WeatherScreen.route, Modifier) {
-                composable(Screen.WeatherScreen.route) { WeatherScreen(navController) }
-                composable(Screen.MapsScreen.route) { MapsScreen(navController) }
+        ){  _ ->
+            Box(
+                modifier = Modifier.fillMaxSize()
+            ){
+
+                Image(
+                    modifier = Modifier.fillMaxWidth().align(Alignment.BottomCenter),
+                    painter = painterResource(imageToDisplay(selectedWeatherEnums.value)),
+                    contentDescription = "Back Image",
+                    alignment = Alignment.TopStart,
+                    contentScale = ContentScale.FillWidth
+                )
+
+                CircularProgressIndicator(
+                    modifier = Modifier.fillMaxWidth().align(Alignment.BottomCenter),
+                    color = Color.White,
+                    strokeWidth = 2.dp
+                )
+
+                NavHost(navController, startDestination = Screen.WeatherScreen.route, Modifier) {
+                    composable(Screen.WeatherScreen.route) { WeatherScreen() }
+                    composable(Screen.MapsScreen.route) { MapsScreen(isOffline = false) }
+                }
             }
         }
     }
@@ -351,7 +457,8 @@ class MainActivity : ComponentActivity() {
             ) == PackageManager.PERMISSION_GRANTED
         }
 
-    private fun geoCodeLocation(context: Context, latitude: Double, longitude: Double){
+    private fun geoCodeLocation(context: Context, latitude: Double, longitude: Double, afterCall: ()-> Unit){
+        baseLogger("Latitude", latitude)
         val geocoder = Geocoder(context, Locale.getDefault())
 
         val addresses: List<Address> = geocoder.getFromLocation(latitude, longitude, 1)
@@ -368,5 +475,6 @@ class MainActivity : ComponentActivity() {
             country = country
         )
 
+        afterCall.invoke()
     }
 }

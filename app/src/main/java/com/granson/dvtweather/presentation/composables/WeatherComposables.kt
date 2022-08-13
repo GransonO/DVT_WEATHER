@@ -1,9 +1,6 @@
-package com.granson.dvtweather.presentation
+package com.granson.dvtweather.presentation.composables
 
-import androidx.annotation.DimenRes
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -18,10 +15,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -34,6 +28,7 @@ import com.granson.dvtweather.ui.theme.DVTColors
 import com.granson.dvtweather.ui.theme.DVTWeatherTheme
 import com.granson.dvtweather.R
 import com.granson.dvtweather.enums.WeatherEnums
+import com.granson.dvtweather.ui.theme.Typography
 
 @Composable
 fun BackImage(backImage: Int, temp: String, weather: WeatherEnums, location: String){
@@ -80,7 +75,7 @@ fun CurrentWeatherCol(
             Text(
                 modifier = Modifier.align(alignment = Alignment.BottomCenter).padding(top = 10.dp),
                 text = temp,
-                style = TextStyle(
+                style = Typography.body1.copy(
                     color = Color.White,
                     fontSize = 55.sp
                 )
@@ -89,7 +84,7 @@ fun CurrentWeatherCol(
 
         Text(
             text = weather.name,
-            style = TextStyle(
+            style = Typography.body1.copy(
                 color = Color.White,
                 fontSize = 45.sp
             )
@@ -97,7 +92,7 @@ fun CurrentWeatherCol(
 
         Text(
             text = "at $location",
-            style = TextStyle(
+            style = Typography.body1.copy(
                 color = Color.White,
                 fontSize = 17.sp
             )
@@ -123,7 +118,7 @@ fun TempDisplay(temp: String, description: String){
             Text(
                 modifier = Modifier.align(alignment = Alignment.BottomCenter).padding(top = 3.dp),
                 text = temp,
-                style = TextStyle(
+                style = Typography.body1.copy(
                     color = Color.White,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold
@@ -132,7 +127,7 @@ fun TempDisplay(temp: String, description: String){
         }
         Text(
             text = description,
-            style = TextStyle(
+            style = Typography.body1.copy(
                 color = Color.White,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold
@@ -149,23 +144,28 @@ fun DateDisplay(date: String, weather: WeatherEnums, temp: String, ){
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(
-            modifier = Modifier,
+            modifier = Modifier.weight(1f),
             text = date,
-            style = TextStyle(
+            style = Typography.body1.copy(
                 color = Color.White,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold
             )
         )
 
-        Image(
-            modifier = Modifier.size(30.dp),
-            painter = painterResource(weatherIcon(weather)),
-            contentDescription = "degrees"
-        )
+        Box(
+            modifier = Modifier.weight(1f),
+            contentAlignment = Alignment.Center
+        ){
+            Image(
+                modifier = Modifier.size(30.dp),
+                painter = painterResource(weatherIcon(weather)),
+                contentDescription = "Weather"
+            )
+        }
 
         Box(
-            modifier = Modifier.width(35.dp)
+            modifier = Modifier.weight(1f)
         ){
             Image(
                 modifier = Modifier.size(8.dp).align(alignment = Alignment.TopEnd),
@@ -174,9 +174,9 @@ fun DateDisplay(date: String, weather: WeatherEnums, temp: String, ){
             )
 
             Text(
-                modifier = Modifier.align(alignment = Alignment.BottomCenter).padding(top = 3.dp),
+                modifier = Modifier.align(alignment = Alignment.BottomEnd).padding(top = 3.dp, end = 8.dp),
                 text = temp,
-                style = TextStyle(
+                style = Typography.body1.copy(
                     color = Color.White,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold
@@ -231,7 +231,7 @@ fun DVTEditText(
 
 
     TextField(
-        textStyle = TextStyle(
+        textStyle = Typography.body1.copy(
             fontSize = 14.sp,
             color =  Color.Gray
         ),
@@ -251,7 +251,7 @@ fun DVTEditText(
                 Text(
                     modifier = Modifier.padding(),
                     text = fieldPlaceholder.ifEmpty { "" },
-                    style = TextStyle(
+                    style = Typography.body1.copy(
                         fontSize = 14.sp,
                         color =  Color.LightGray
                     ),

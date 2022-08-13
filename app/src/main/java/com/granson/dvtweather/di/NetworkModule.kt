@@ -1,14 +1,8 @@
 package com.granson.dvtweather.di
 
 import android.content.Context
-import android.net.ConnectivityManager
-import android.net.NetworkInfo
 import com.granson.dvtweather.data.api.PlaceService
 import com.granson.dvtweather.data.api.WeatherService
-import com.granson.dvtweather.data.repository.repos.PlaceRepository
-import com.granson.dvtweather.data.repository.repos.WeatherRepository
-import com.granson.dvtweather.data.repository.repos.repoImpl.PlaceRepositoryImpl
-import com.granson.dvtweather.data.repository.repos.repoImpl.WeatherRepositoryImpl
 import com.granson.dvtweather.utils.APIUtils.PLACE_URL
 import com.granson.dvtweather.utils.APIUtils.WEATHER_URL
 import dagger.Module

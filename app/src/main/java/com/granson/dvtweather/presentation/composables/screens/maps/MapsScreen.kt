@@ -1,6 +1,5 @@
 package com.granson.dvtweather.presentation.composables.screens.maps
 
-import android.graphics.fonts.FontFamily
 import android.widget.Toast
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -8,6 +7,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -20,15 +20,15 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
+import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.LatLngBounds
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.rememberCameraPositionState
@@ -36,9 +36,10 @@ import com.granson.dvtweather.R
 import com.granson.dvtweather.data.models.weather.WeatherRequest
 import com.granson.dvtweather.presentation.composables.screens.viewModels.models.SavedPlace
 import com.granson.dvtweather.enums.PlacesSheetEnums
-import com.granson.dvtweather.presentation.*
+import com.granson.dvtweather.presentation.composables.*
 import com.granson.dvtweather.presentation.composables.screens.viewModels.ScreensViewModel
 import com.granson.dvtweather.presentation.composables.screens.viewModels.models.PlaceLocation
+import com.granson.dvtweather.ui.theme.Typography
 import com.granson.dvtweather.utils.Common
 import com.granson.dvtweather.utils.Common.baseLogger
 import com.granson.dvtweather.utils.Common.getCurrentDate
@@ -47,8 +48,6 @@ import com.granson.dvtweather.utils.Common.mainWeatherEnums
 import com.granson.dvtweather.utils.Common.selectedPlaceWeatherEnums
 import com.granson.dvtweather.utils.Common.selectedWeatherEnums
 import com.granson.dvtweather.utils.Common.userCurrentLocation
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -56,7 +55,9 @@ import kotlin.random.Random
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun MapsScreen(navController: NavController) {
+fun MapsScreen(
+    isOffline: Boolean = false
+) {
     val scope = rememberCoroutineScope()
     val backdropScaffoldState = rememberBackdropScaffoldState(BackdropValue.Revealed)
     val sheetState = remember { mutableStateOf(PlacesSheetEnums.ADD) }
@@ -74,12 +75,6 @@ fun MapsScreen(navController: NavController) {
         }
     }
 
-    val closeSheet = {
-        scope.launch {
-            backdropScaffoldState.reveal()
-        }
-    }
-
     if(backdropScaffoldState.currentValue == BackdropValue.Concealed){
         selectedWeatherEnums.value = selectedPlaceWeatherEnums.value
     }else{
@@ -89,40 +84,10 @@ fun MapsScreen(navController: NavController) {
     BackdropScaffold(
         scaffoldState = backdropScaffoldState,
         appBar = {
-            Row(
-                Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 35.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    modifier = Modifier,
-                    text = "Favourite Places",
-                    style = TextStyle(
-                        color = Color.White,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                )
 
-                Card(
-                    modifier = Modifier.clickable{
-                        sheetState.value = PlacesSheetEnums.ADD
-                        openSheet.invoke()
-                    },
-                    shape = RoundedCornerShape(25.dp),
-                    backgroundColor = Color.White,
-                    elevation = 10.dp
-                ) {
-                    Box(
-                        modifier = Modifier.padding(5.dp),
-                        contentAlignment = Alignment.Center
-                    ){
-                        Icon(Icons.Rounded.Add, "", tint = backgroundColorExt(selectedPlaceWeatherEnums.value))
-                    }
-                }
-            }
         },
-        peekHeight = 75.dp,
+        peekHeight = 25.dp,
+        headerHeight = 0.dp,
         backLayerBackgroundColor = backgroundColorExt(
             if(backdropScaffoldState.currentValue == BackdropValue.Concealed) selectedPlaceWeatherEnums.value else selectedWeatherEnums.value
         ),
@@ -150,9 +115,43 @@ fun MapsScreen(navController: NavController) {
                     )
                 ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth().height(56.dp),
-                        horizontalArrangement = Arrangement.Center
-                    ){
+                        Modifier.fillMaxWidth().padding(bottom = 16.dp, top = 35.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            modifier = Modifier,
+                            text = if(isOffline) "Offline Mode" else "Favourite Places",
+                            style = Typography.body1.copy(
+                                color = Color.White,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        )
+                        if(!isOffline)
+                            Card(
+                                modifier = Modifier.clickable{
+                                    sheetState.value = PlacesSheetEnums.ADD
+                                    openSheet.invoke()
+                                },
+                                shape = RoundedCornerShape(25.dp),
+                                backgroundColor = Color.White,
+                                elevation = 10.dp
+                            ) {
+                                Box(
+                                    modifier = Modifier.padding(5.dp),
+                                    contentAlignment = Alignment.Center
+                                ){
+                                    Icon(Icons.Rounded.Add, "", tint = backgroundColorExt(selectedPlaceWeatherEnums.value))
+                                }
+                            }
+                    }
+
+                    if(!isOffline)
+                        Row(
+                            modifier = Modifier.fillMaxWidth().height(56.dp),
+                            horizontalArrangement = Arrangement.Center
+                        ){
                         Box(
                             modifier = Modifier.width((width * 0.45).dp).height(45.dp).clip(shape = RoundedCornerShape(10.dp)).background(
                                     color = if(listView.value) backgroundColor(
@@ -164,7 +163,7 @@ fun MapsScreen(navController: NavController) {
                         ){
                             Text(
                                 text = "List",
-                                style = TextStyle(
+                                style = Typography.body1.copy(
                                     color = Color.White,
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.SemiBold
@@ -181,8 +180,8 @@ fun MapsScreen(navController: NavController) {
                             contentAlignment = Alignment.Center
                         ){
                             Text(
-                                text = "Maps",
-                                style = TextStyle(
+                                text = "Map",
+                                style = Typography.body1.copy(
                                     color = Color.White,
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.SemiBold
@@ -192,16 +191,28 @@ fun MapsScreen(navController: NavController) {
                     }
 
                     if(listView.value)
-                        Column(
-                            modifier = Modifier.fillMaxSize().verticalScroll(
-                                rememberScrollState())
-                        ){
-                            ListView(
-                                screensViewModel.listSavedPlaces.value
-                            ) {
-                                sheetState.value = PlacesSheetEnums.VIEW
-                                screensViewModel.selectedPlace.value = it
-                                openSheet.invoke()
+                        if(screensViewModel.isLoading.value){
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ){
+                                CircularProgressIndicator(
+                                    color = Color.White,
+                                    strokeWidth = 2.dp
+                                )
+                            }
+                        }else{
+                            Column(
+                                modifier = Modifier.fillMaxSize().verticalScroll(
+                                    rememberScrollState())
+                            ){
+                                ListView(
+                                    screensViewModel.listSavedPlaces.value
+                                ) {
+                                    sheetState.value = PlacesSheetEnums.VIEW
+                                    screensViewModel.selectedPlace.value = it
+                                    openSheet.invoke()
+                                }
                             }
                         }
 
@@ -264,6 +275,7 @@ fun MapsScreen(navController: NavController) {
                             }
                             PlacesSheetEnums.VIEW -> {
                                 LocationView(
+                                    screensViewModel = screensViewModel,
                                     showMap = backdropScaffoldState.currentValue == BackdropValue.Concealed,
                                     placeItem = screensViewModel.selectedPlace.value
                                 )
@@ -281,11 +293,27 @@ fun MapView(
     list: List<SavedPlace>,
     openSheet: (SavedPlace) -> Unit
 ){
+    val scope = rememberCoroutineScope()
+    val cameraPositionState = rememberCameraPositionState(key = Random.toString())  {
+        position = CameraPosition.fromLatLngZoom(userCurrentLocation, 13f)
+    }
 
+    val builder = LatLngBounds.Builder()
+    list.forEach { place ->
+        val allLocations = LatLng(place.location.latitude, place.location.longitude)
+        builder.include(allLocations)
+    }
+
+    val refreshMarker = {
+        scope.launch {
+            cameraPositionState.move(CameraUpdateFactory.newLatLngBounds(builder.build(), 64))
+        }
+    }
     GoogleMap(
         modifier = Modifier.fillMaxSize().clip(shape = RoundedCornerShape(10.dp)),
-        cameraPositionState = rememberCameraPositionState(key = Random.toString())  {
-            position = CameraPosition.fromLatLngZoom(LatLng(userCurrentLocation.latitude, userCurrentLocation.longitude), 13f)
+        cameraPositionState = cameraPositionState,
+        onMapLoaded = {
+            refreshMarker.invoke()
         }
     ) {
         baseLogger("The List", list)
@@ -305,6 +333,7 @@ fun MapView(
                 Marker(
                     position = LatLng(marker.location.latitude, marker.location.longitude),
                     title = marker.name,
+                    snippet = "Tap for more info",
                     onInfoWindowClick = {
                         openSheet.invoke(marker)
                     }
@@ -325,7 +354,7 @@ fun ListView(
                 Text(
                     modifier = Modifier.padding(top = 30.dp),
                     text = "You got no favourites, you can add one by clicking the circular button on the top right corner :)",
-                    style = TextStyle(
+                    style = Typography.body1.copy(
                         color = Color.White,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold
@@ -370,9 +399,9 @@ fun LocationCard(
                 Text(
                     modifier = Modifier,
                     text = placeItem.name,
-                    style = TextStyle(
+                    style = Typography.body1.copy(
                         color = Color.Gray,
-                        fontSize = 18.sp,
+                        fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold
                     )
                 )
@@ -397,7 +426,7 @@ fun LocationCard(
                 Text(
                     modifier = Modifier,
                     text = "last updated on ${placeItem.date}",
-                    style = TextStyle(
+                    style = Typography.body1.copy(
                         color = Color.Gray,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium
@@ -410,10 +439,10 @@ fun LocationCard(
 
 @Composable
 fun LocationView(
+    screensViewModel: ScreensViewModel,
     showMap: Boolean = false,
     placeItem: SavedPlace
 ){
-    val screensViewModel = hiltViewModel<ScreensViewModel>()
     val weatherRequest = remember { mutableStateOf(WeatherRequest()) }
     val hasWeatherValues = remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -478,7 +507,7 @@ fun LocationView(
                     Text(
                         modifier = Modifier.align(alignment = Alignment.BottomCenter).padding(top = 10.dp),
                         text = weatherRequest.value.current.temp.roundToInt().toString(),
-                        style = TextStyle(
+                        style = Typography.body1.copy(
                             color = Color.White,
                             fontSize = 45.sp,
                             shadow = Shadow(
@@ -492,7 +521,7 @@ fun LocationView(
 
                 Text(
                     text = getWeatherEnum(weatherRequest.value.current.weather[0].id).name,
-                    style = TextStyle(
+                    style = Typography.body1.copy(
                         color = Color.White,
                         fontSize = 30.sp
                     )
@@ -500,7 +529,7 @@ fun LocationView(
 
                 Text(
                     text = "at ${placeItem.name}, ${placeItem.locality}",
-                    style = TextStyle(
+                    style = Typography.body1.copy(
                         color = Color.White,
                         fontSize = 16.sp
                     )
@@ -568,27 +597,29 @@ fun LocationView(
                             )
                         }
 
-                        Card(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 20.dp).clickable{
-                                screensViewModel.deletePlace(placeItem)
-                            },
-                            backgroundColor = Color.White,
-                            shape = RoundedCornerShape(100.dp),
-                            border = BorderStroke(
-                                width = 2.dp,
-                                color = backgroundColorExt(selectedPlaceWeatherEnums.value),
-                            )
-                        ){
-                            Text(
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp),
-                                text = "REMOVE PLACE",
-                                style = TextStyle(
+                        if(screensViewModel.listSavedPlaces.value.contains(placeItem)){
+                            Card(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 20.dp).clickable{
+                                    screensViewModel.deletePlace(placeItem)
+                                },
+                                backgroundColor = Color.White,
+                                shape = RoundedCornerShape(100.dp),
+                                border = BorderStroke(
+                                    width = 2.dp,
                                     color = backgroundColorExt(selectedPlaceWeatherEnums.value),
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                ),
-                                textAlign = TextAlign.Center
-                            )
+                                )
+                            ){
+                                Text(
+                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp),
+                                    text = "REMOVE PLACE",
+                                    style = Typography.body1.copy(
+                                        color = backgroundColorExt(selectedPlaceWeatherEnums.value),
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.SemiBold
+                                    ),
+                                    textAlign = TextAlign.Center
+                                )
+                            }
                         }
 
                         Spacer(Modifier.height(55.dp))
@@ -607,12 +638,12 @@ fun LocationView(
                 strokeWidth = 2.dp
             )
         }
-
     // Display Toasts
-    if(screensViewModel.isUpdated.value){
-        Toast.makeText(context, "${placeItem.name} weather Updated success", Toast.LENGTH_LONG).show()
-        screensViewModel.isUpdated.value = false
+    if(screensViewModel.dbRequestError.value){
+        Toast.makeText(context, "An error occurred while performing the request", Toast.LENGTH_LONG).show()
+        screensViewModel.dbRequestError.value = false
     }
+
     if(screensViewModel.isDeleted.value){
         Toast.makeText(context, "${placeItem.name} removed from favourites", Toast.LENGTH_LONG).show()
         screensViewModel.isDeleted.value = false
@@ -625,17 +656,16 @@ fun AddLocation(
     showMap: Boolean = false
 ){
 
-    val markerPosition = remember { mutableStateOf(LatLng(-1.2855328,36.7972995)) }
+    val markerPosition = remember { mutableStateOf(userCurrentLocation) }
     val scope = rememberCoroutineScope()
     val fetchingMessage = remember { mutableStateOf("Getting the place details") }
-    val isPlaceSelected = remember { mutableStateOf(false) }
     val isFetchingDetails = remember { mutableStateOf(true) }
     val selectedPlace = remember { mutableStateOf(SavedPlace()) }
     val context = LocalContext.current
 
     val weatherRequest = remember { mutableStateOf(WeatherRequest()) }
 
-    if(!isPlaceSelected.value){
+    if(!screensViewModel.isPlaceSelected.value){
         selectedPlaceWeatherEnums.value = selectedWeatherEnums.value
     }
 
@@ -665,7 +695,6 @@ fun AddLocation(
         }
     }
 
-
     val requestPlaceWeatherDetails = {
         scope.launch {
             screensViewModel.getPlaceDetails(
@@ -687,7 +716,7 @@ fun AddLocation(
     Column (
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
     ){
-        if(!isPlaceSelected.value){
+        if(!screensViewModel.isPlaceSelected.value){
             DVTEditText(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 fieldPlaceholder = "Search Place",
@@ -701,6 +730,27 @@ fun AddLocation(
                     }
                 }
             )
+        }else{
+            Box(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp, end = 16.dp),
+                contentAlignment = Alignment.CenterEnd
+            ){
+                Card(
+                    modifier = Modifier.clickable{
+                        screensViewModel.isPlaceSelected.value = false
+                    },
+                    shape = RoundedCornerShape(25.dp),
+                    backgroundColor = Color.White,
+                    elevation = 10.dp
+                ) {
+                    Box(
+                        modifier = Modifier.padding(5.dp),
+                        contentAlignment = Alignment.Center
+                    ){
+                        Icon(Icons.Rounded.Close, "", tint = backgroundColorExt(selectedPlaceWeatherEnums.value))
+                    }
+                }
+            }
         }
 
         if(screensViewModel.isRequesting.value){
@@ -710,7 +760,7 @@ fun AddLocation(
             )
         }
 
-        if(isPlaceSelected.value){
+        if(screensViewModel.isPlaceSelected.value){
             if(isFetchingDetails.value){
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -728,7 +778,7 @@ fun AddLocation(
                         Text(
                             modifier = Modifier.fillMaxWidth().padding(top = 5.dp),
                             text = fetchingMessage.value,
-                            style = TextStyle(
+                            style = Typography.body1.copy(
                                 color = Color.White,
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.SemiBold
@@ -745,11 +795,22 @@ fun AddLocation(
                         modifier = Modifier.fillMaxWidth().height(205.dp).padding(start = 16.dp, end = 16.dp, top = 16.dp).clip(RoundedCornerShape(15.dp)),
                         backgroundColor = Color.White
                     ) {
-                        if(showMap)
+                        if(showMap){
+                            val cameraPositionState = rememberCameraPositionState {
+                                position = CameraPosition.fromLatLngZoom(userCurrentLocation, 15f)
+                            }
+
+                            val refreshMarker = {
+                                scope.launch {
+                                    cameraPositionState.position = CameraPosition.fromLatLngZoom(markerPosition.value, 15f)
+                                }
+                            }
+
                             GoogleMap(
                                 modifier = Modifier.fillMaxSize(),
-                                cameraPositionState = rememberCameraPositionState {
-                                    position = CameraPosition.fromLatLngZoom(markerPosition.value, 15f)
+                                cameraPositionState = cameraPositionState,
+                                onMapLoaded = {
+                                    refreshMarker.invoke()
                                 }
                             ) {
                                 Marker(
@@ -757,6 +818,7 @@ fun AddLocation(
                                     title = selectedPlace.value.name,
                                 )
                             }
+                        }
                     }
 
                     Box(
@@ -839,7 +901,7 @@ fun AddLocation(
                             Text(
                                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp),
                                 text = "Add to favourites",
-                                style = TextStyle(
+                                style = Typography.body1.copy(
                                     color = backgroundColorExt(selectedPlaceWeatherEnums.value),
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.SemiBold
@@ -847,6 +909,8 @@ fun AddLocation(
                                 textAlign = TextAlign.Center
                             )
                         }
+                    }else{
+                        Spacer(Modifier.height(16.dp))
                     }
 
                     Spacer(modifier = Modifier.height(50.dp))
@@ -871,7 +935,7 @@ fun AddLocation(
                                 placeId = it.placeId
                             )
                         ){ v ->
-                            isPlaceSelected.value = true
+                            screensViewModel.isPlaceSelected.value = true
                             selectedPlace.value = v
                             requestPlaceWeatherDetails.invoke()
                         }
@@ -888,6 +952,11 @@ fun AddLocation(
         }
 
     }
+    // Display Toasts
+    if(screensViewModel.requestError.value){
+        Toast.makeText(context, "Request Erroe, please try again later", Toast.LENGTH_LONG).show()
+        screensViewModel.requestError.value = false
+    }
 }
 
 @Composable
@@ -901,7 +970,7 @@ fun PlaceItem(
                 isSelected(placeDetails)
             },
             text = placeDetails.name,
-            style = TextStyle(
+            style = Typography.body1.copy(
                 color = Color.White,
                 fontSize = 16.sp
             )
