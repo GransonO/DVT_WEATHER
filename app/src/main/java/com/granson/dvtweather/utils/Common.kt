@@ -10,6 +10,7 @@ import com.granson.dvtweather.enums.WeatherEnums
 import java.text.SimpleDateFormat
 import java.util.*
 
+
 object Common {
     // Global Scope
     var selectedWeatherEnums = mutableStateOf(WeatherEnums.SUNNY)
@@ -35,7 +36,7 @@ object Common {
     const val DB_VERSION = 1
 
     fun baseLogger(title: String, value: Any?) {
-        Log.e(title, " Value -> $value")
+        Log.e(title, " :> $value")
     }
 
 
@@ -87,5 +88,4 @@ object Common {
         val d = Date()
         sdf.format(d)
     }
-
 }

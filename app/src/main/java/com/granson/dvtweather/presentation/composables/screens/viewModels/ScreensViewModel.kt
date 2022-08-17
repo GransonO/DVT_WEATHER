@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+@Suppress("DEPRECATION") // Will be omitted once
 @HiltViewModel
 class ScreensViewModel @Inject constructor(
     private val weatherRepository: WeatherRepository,
@@ -186,12 +187,11 @@ class ScreensViewModel @Inject constructor(
     }
 
     fun savePlace(place: SavedPlace){
-
         CoroutineScope(Dispatchers.IO).launch {
             dataRepository.addFavouritePlace(place).collect{
                 when (it) {
                     is Resource.Success -> {
-                        baseLogger("The Saved Places Yay", it.data)
+                        baseLogger("The Saved Places", it.data)
                         getSavedPlaces()
                         isAddedSuccess.value = true
                     }
@@ -205,6 +205,7 @@ class ScreensViewModel @Inject constructor(
     }
 
     fun updatePlace(place: SavedPlace){
+        baseLogger("The Places Updated", place)
         CoroutineScope(Dispatchers.IO).launch {
             dataRepository.updateFavouritePlaces(place).collect{
                 when (it) {

@@ -1,7 +1,9 @@
 package com.granson.dvtweather.presentation
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.location.Location
+import android.location.LocationManager
 import android.os.Looper
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -20,6 +22,7 @@ import javax.inject.Inject
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val locationClient: FusedLocationProviderClient,
+    context: Context
 ): ViewModel() {
 
     var hasPermissions = mutableStateOf(false)
@@ -47,6 +50,22 @@ class MainViewModel @Inject constructor(
 
         awaitClose {
             locationClient.removeLocationUpdates(callBack)
+        }
+    }
+
+
+    val locationEnabled = {
+
+        val lm = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+
+        try {
+            val networkEnabled = lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+            val gpsEnabled = lm.isProviderEnabled(LocationManager.GPS_PROVIDER)
+
+            gpsEnabled && networkEnabled
+        } catch (ex: Exception) {
+            ex.printStackTrace()
+            false
         }
     }
 }

@@ -90,6 +90,7 @@ class MainActivity : ComponentActivity() {
                 val isOffline = remember { mutableStateOf(false) }
                 val starterState = remember { mutableStateOf(true) }
                 val hasInternet = remember { mutableStateOf(true) }
+                val noLocation = remember { mutableStateOf(false) }
                 val fetchingMessage = remember { mutableStateOf("...") }
 
                 val weatherState = remember { mutableStateOf(selectedWeatherEnums.value) }
@@ -132,24 +133,29 @@ class MainActivity : ComponentActivity() {
                 val makeLocationRequest = {
                     scope.launch {
                         // Fetch Current Location
-
                         fetchingMessage.value = "Fetching your current location, gimme a sec..."
                         delay(2000)
 
                         if(screensViewModel.getInternetStatus(context)){
-                            mainViewModel.getCurrentLocation().collectLatest {
-                                if(locationCount == 0){
-                                    locationCount = 1
-                                    userCurrentLocation = LatLng(it.latitude, it.longitude)
-                                    CoroutineScope(Dispatchers.IO).launch {
-                                        geoCodeLocation(context, it.latitude, it.longitude){
-                                            fetchingMessage.value = "Got the location,\n\n${userLocationDetails.value.address}\n\nHang in there, sourcing for weather info..."
-                                            current.invoke()
+                            if(mainViewModel.locationEnabled.invoke()){
+                                mainViewModel.getCurrentLocation().collectLatest {
+                                    if(locationCount == 0){
+                                        locationCount = 1
+                                        userCurrentLocation = LatLng(it.latitude, it.longitude)
+                                        CoroutineScope(Dispatchers.IO).launch {
+                                            geoCodeLocation(context, it.latitude, it.longitude){
+                                                fetchingMessage.value = "Got the location,\n\n${userLocationDetails.value.address}\n\nHang in there, sourcing for weather info..."
+                                                current.invoke()
+                                            }
                                         }
                                     }
-                                }
+                                }   
+                            }else{
+                                fetchingMessage.value = "Location!,\nPlease enable your Location to proceed "
+                                noLocation.value = false
                             }
                         }else{
+                            fetchingMessage.value = "Oops, looks like there no Internet connection! Please check your network and try again"
                             hasInternet.value = false
                         }
                     }
@@ -209,8 +215,8 @@ class MainActivity : ComponentActivity() {
                                     )
                                 }else{
                                     StarterPage(
-                                        firstText = "Yikes!!!,",
-                                        secondText = "Oops, looks like there no Internet connection! Please check your network and try again",
+                                        firstText = "Oh,",
+                                        secondText = fetchingMessage.value,
                                         showButton = true,
                                         buttonText = "Retry",
                                         onClick = {
@@ -220,14 +226,28 @@ class MainActivity : ComponentActivity() {
                                 }
                             }else{
 
-                                StarterPage(
-                                    firstText = "Hello there,",
-                                    secondText = fetchingMessage.value,
-                                    showButton = false
-                                )
-                                if(locationCount != 1){
-                                    // Invoke once upon render
-                                    makeLocationRequest.invoke() // Get current location
+                                if(noLocation.value){
+
+                                    StarterPage(
+                                        firstText = "Oh,",
+                                        secondText = fetchingMessage.value,
+                                        showButton = true,
+                                        buttonText = "Retry",
+                                        onClick = {
+                                            makeLocationRequest.invoke()
+                                        }
+                                    )
+
+                                }else{
+                                    StarterPage(
+                                        firstText = "Hello there,",
+                                        secondText = fetchingMessage.value,
+                                        showButton = false
+                                    )
+                                    if(locationCount != 1){
+                                        // Invoke once upon render
+                                        makeLocationRequest.invoke() // Get current location
+                                    }
                                 }
                             }
 
@@ -249,32 +269,9 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.fillMaxSize()
                     ){
                         MapsScreen(
-                            isOffline = true
+                            isOffline = true,
+                            onLineCall = { makeLocationRequest.invoke() }
                         )
-
-                        if(screensViewModel.getInternetStatus(context)){
-                            Card(
-                                modifier = Modifier.fillMaxWidth().align(alignment = Alignment.BottomCenter).padding(bottom = 5.dp, start = 16.dp, end = 16.dp).clickable {
-                                    makeLocationRequest.invoke()
-                                },
-                                backgroundColor = backgroundColorExt(selectedWeatherEnums.value),
-                                border = BorderStroke(
-                                    width = 1.dp,
-                                    color = backgroundColorExt(selectedWeatherEnums.value),
-                                ),
-                                shape = RoundedCornerShape(10.dp)
-                            ){
-                                Text(
-                                    modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp),
-                                    text = "Network available, go online",
-                                    style = Typography.body1.copy(
-                                        color = Color.White,
-                                        fontSize = 18.sp
-                                    ),
-                                    textAlign = TextAlign.Center
-                                )
-                            }
-                        }
                     }
                 }
             }
@@ -440,7 +437,7 @@ class MainActivity : ComponentActivity() {
 
                 NavHost(navController, startDestination = Screen.WeatherScreen.route, Modifier) {
                     composable(Screen.WeatherScreen.route) { WeatherScreen() }
-                    composable(Screen.MapsScreen.route) { MapsScreen(isOffline = false) }
+                    composable(Screen.MapsScreen.route) { MapsScreen(isOffline = false){  } }
                 }
             }
         }
