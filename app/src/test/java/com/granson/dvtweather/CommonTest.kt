@@ -27,7 +27,7 @@ internal class CommonTest {
 
     @Test
     fun getSelectedWeatherEnums() {
-        // assert initial state of value in Singletone
+        // assert initial state of value in Singleton
         assertThat(selectedWeatherEnums.value).isEqualTo( WeatherEnums.SUNNY)
     }
 
@@ -45,8 +45,8 @@ internal class CommonTest {
     @Test
     fun setMainWeatherEnums() {
         mainWeatherEnums.value = WeatherEnums.RAINY
-        assertThat(mainWeatherEnums.value).isNotEqualTo( WeatherEnums.SUNNY)
         // After assignment
+        assertThat(mainWeatherEnums.value).isNotEqualTo( WeatherEnums.SUNNY)
         assertThat(mainWeatherEnums.value).isEqualTo( WeatherEnums.RAINY)
     }
 
@@ -72,33 +72,33 @@ internal class CommonTest {
     }
 
     @Test
-    fun getSTORM_IDS() {
+    fun getStormIds() {
         assertThat(STORM_IDS.size).isEqualTo(1)
     }
 
     @Test
-    fun getCLOUDY_IDS() {
+    fun getCloudyIDS() {
         assertThat(CLOUDY_IDS.contains(802)).isTrue()
     }
 
     @Test
-    fun getDRIZZLE_IDS() {
+    fun getDrizzleIDS() {
         assertThat(DRIZZLE_IDS.contains(302)).isTrue()
         assertThat(DRIZZLE_IDS.contains(802)).isFalse()
     }
 
     @Test
-    fun getRAIN_IDS() {
+    fun getRainIDS() {
         assertThat(RAIN_IDS.contains(502)).isTrue()
     }
 
     @Test
-    fun getCLEAR_IDS() {
+    fun getClearIDS() {
         assertThat(CLEAR_IDS.contains(202)).isTrue()
     }
 
     @Test
-    fun getSNOW_IDS() {
+    fun getSnowIDS() {
         assertThat(SNOW_IDS.contains(602)).isTrue()
     }
 
