@@ -1,12 +1,11 @@
 package com.granson.dvtweather.presentation.composables.screens.viewModels
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.net.ConnectivityManager
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.granson.dvtweather.R
 import com.granson.dvtweather.data.models.places.autocomplete.AutoComplete
 import com.granson.dvtweather.data.repository.Resource
 import com.granson.dvtweather.data.repository.repos.DataRepository

@@ -765,6 +765,7 @@ fun AddLocation(
                         screensViewModel.placeSearch(
                             it,
                             context.resources.getString(R.string.places_api_key)
+
                         )
                     }
                 }
