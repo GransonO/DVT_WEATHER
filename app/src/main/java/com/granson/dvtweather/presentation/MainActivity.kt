@@ -1,6 +1,7 @@
 package com.granson.dvtweather.presentation
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Address
@@ -50,7 +51,6 @@ import com.granson.dvtweather.presentation.navigation.DVTScreens
 import com.granson.dvtweather.presentation.navigation.Screen
 import com.granson.dvtweather.ui.theme.DVTWeatherTheme
 import com.granson.dvtweather.ui.theme.Typography
-import com.granson.dvtweather.utils.Common.baseLogger
 import com.granson.dvtweather.utils.Common.currentTemp
 import com.granson.dvtweather.utils.Common.dailyWeather
 import com.granson.dvtweather.utils.Common.daysFlow
@@ -104,14 +104,12 @@ class MainActivity : ComponentActivity() {
                 val current = {
                     scope.launch {
 
-                        baseLogger("The statement", fetchingMessage.value)
                         screensViewModel.getWeatherInfo(
                             lat = userCurrentLocation.latitude.toFloat(),
                             lon = userCurrentLocation.longitude.toFloat(),
                             context = context
                         )
                         screensViewModel.currentWeather.collect {
-                                baseLogger("Anything yet", it.toString())
                                 val value = it.data
                                 if(value != null){
                                     currentTemp.value = value.current.temp.roundToInt().toString()
@@ -195,58 +193,62 @@ class MainActivity : ComponentActivity() {
                     )
 
                     checkUserPermissions.invoke()
-                }else{
+                } else {
                     if(mainViewModel.isLocationAcquired.value){
                         HomePage()
+
                     }else{
                         if(mainViewModel.hasPermissions.value){
                             // Permissions granted
                             if(!hasInternet.value){
-                                if(screensViewModel.listSavedPlaces.value.isNotEmpty()){
-                                    // Has saved data
-                                    StarterPage(
-                                        firstText = "Oh,",
-                                        secondText = "Looks like there no Internet connection! Would you like to start offline mode?",
-                                        showButton = true,
-                                        buttonText = "Lets go offline",
-                                        onClick = {
-                                            isOffline.value = true
-                                        }
-                                    )
-                                }else{
-                                    StarterPage(
-                                        firstText = "Oh,",
-                                        secondText = fetchingMessage.value,
-                                        showButton = true,
-                                        buttonText = "Retry",
-                                        onClick = {
-                                            makeLocationRequest.invoke()
-                                        }
-                                    )
+                                when{
+                                    screensViewModel.listSavedPlaces.value.isNotEmpty() -> {
+                                        StarterPage(
+                                            firstText = "Oh,",
+                                            secondText = "Looks like there no Internet connection! Would you like to start offline mode?",
+                                            showButton = true,
+                                            buttonText = "Lets go offline",
+                                            onClick = {
+                                                isOffline.value = true
+                                            }
+                                        )
+                                    }
+                                    else -> {
+                                        StarterPage(
+                                            firstText = "Oh,",
+                                            secondText = fetchingMessage.value,
+                                            showButton = true,
+                                            buttonText = "Retry",
+                                            onClick = {
+                                                makeLocationRequest.invoke()
+                                            }
+                                        )
+                                    }
                                 }
+
                             }else{
-
-                                if(noLocation.value){
-
-                                    StarterPage(
-                                        firstText = "Oh,",
-                                        secondText = fetchingMessage.value,
-                                        showButton = true,
-                                        buttonText = "Retry",
-                                        onClick = {
-                                            makeLocationRequest.invoke()
+                                when{
+                                    noLocation.value ->{
+                                        StarterPage(
+                                            firstText = "Oh,",
+                                            secondText = fetchingMessage.value,
+                                            showButton = true,
+                                            buttonText = "Retry",
+                                            onClick = {
+                                                makeLocationRequest.invoke()
+                                            }
+                                        )
+                                    }
+                                    else -> {
+                                        StarterPage(
+                                            firstText = "Hello there,",
+                                            secondText = fetchingMessage.value,
+                                            showButton = false
+                                        )
+                                        if(locationCount != 1){
+                                            // Invoke once upon render
+                                            makeLocationRequest.invoke() // Get current location
                                         }
-                                    )
-
-                                }else{
-                                    StarterPage(
-                                        firstText = "Hello there,",
-                                        secondText = fetchingMessage.value,
-                                        showButton = false
-                                    )
-                                    if(locationCount != 1){
-                                        // Invoke once upon render
-                                        makeLocationRequest.invoke() // Get current location
                                     }
                                 }
                             }
@@ -374,6 +376,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
     @Composable
     fun HomePage(){
 
@@ -416,7 +419,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
-        ){  _ ->
+        ){
             Box(
                 modifier = Modifier.fillMaxSize()
             ){
@@ -455,7 +458,7 @@ class MainActivity : ComponentActivity() {
         }
 
     private fun geoCodeLocation(context: Context, latitude: Double, longitude: Double, afterCall: ()-> Unit){
-        baseLogger("Latitude", latitude)
+
         val geocoder = Geocoder(context, Locale.getDefault())
 
         val addresses: List<Address> = geocoder.getFromLocation(latitude, longitude, 1)
@@ -464,7 +467,6 @@ class MainActivity : ComponentActivity() {
         val locality: String = addresses[0].locality
         val country: String = addresses[0].countryName
 
-        baseLogger("The address", address)
         userLocationDetails.value = LocationDetails(
             address = address.split(",")[0],
             city = city,

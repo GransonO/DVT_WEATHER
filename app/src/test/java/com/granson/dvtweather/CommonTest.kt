@@ -27,34 +27,25 @@ internal class CommonTest {
 
     @Test
     fun getSelectedWeatherEnums() {
-        // assert initial state of value in Singleton
         assertThat(selectedWeatherEnums.value).isEqualTo( WeatherEnums.SUNNY)
-    }
-
-    @Test
-    fun setSelectedWeatherEnums() {
         selectedWeatherEnums.value = WeatherEnums.RAINY
         assertThat(selectedWeatherEnums.value).isEqualTo( WeatherEnums.RAINY)
     }
 
+
     @Test
     fun getMainWeatherEnums() {
         assertThat(mainWeatherEnums.value).isEqualTo( WeatherEnums.SUNNY)
-    }
-
-    @Test
-    fun setMainWeatherEnums() {
+        // Set Main WeatherEnums
         mainWeatherEnums.value = WeatherEnums.RAINY
-        // After assignment
-        assertThat(mainWeatherEnums.value).isNotEqualTo( WeatherEnums.SUNNY)
         assertThat(mainWeatherEnums.value).isEqualTo( WeatherEnums.RAINY)
     }
+
 
     @Test
     fun getUserCurrentLocation() {
         // Initial setup
         assertThat(userCurrentLocation).isEqualTo(LatLng(-1.23456, 36.2345))
-
         userCurrentLocation = LatLng(-1.0000, 36.2345)
         assertThat(userCurrentLocation).isEqualTo(LatLng(-1.0000, 36.2345))
     }
@@ -72,45 +63,28 @@ internal class CommonTest {
     }
 
     @Test
-    fun getStormIds() {
+    fun assert_weather_id_lists() {
         assertThat(STORM_IDS.size).isEqualTo(1)
-    }
-
-    @Test
-    fun getCloudyIDS() {
         assertThat(CLOUDY_IDS.contains(802)).isTrue()
-    }
-
-    @Test
-    fun getDrizzleIDS() {
         assertThat(DRIZZLE_IDS.contains(302)).isTrue()
         assertThat(DRIZZLE_IDS.contains(802)).isFalse()
-    }
-
-    @Test
-    fun getRainIDS() {
-        assertThat(RAIN_IDS.contains(502)).isTrue()
-    }
-
-    @Test
-    fun getClearIDS() {
         assertThat(CLEAR_IDS.contains(202)).isTrue()
-    }
-
-    @Test
-    fun getSnowIDS() {
         assertThat(SNOW_IDS.contains(602)).isTrue()
     }
+
 
     @Test
     fun getWeatherEnum() {
         assertThat(Common.getWeatherEnum(202)).isEqualTo(WeatherEnums.SUNNY)
+        assertThat(Common.getWeatherEnum(803)).isEqualTo(WeatherEnums.CLOUDY)
+        assertThat(Common.getWeatherEnum(302)).isEqualTo(WeatherEnums.RAINY)
+        assertThat(Common.getWeatherEnum(502)).isEqualTo(WeatherEnums.RAINY)
+        assertThat(Common.getWeatherEnum(602)).isEqualTo(WeatherEnums.RAINY)
     }
 
     @Test
     fun daysFlow() {
-        // baseLogger("The days", Common.daysFlow())
-        assertThat(Common.daysFlow().size).isEqualTo(9)
+        assertThat(Common.daysFlow().size).isEqualTo(8)
     }
 
     @Test

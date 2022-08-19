@@ -15,7 +15,7 @@ data class Prediction(
     @SerializedName("structured_formatting")
     val structuredFormatting: StructuredFormatting,
     @SerializedName("terms")
-    val terms: List<Term>,
+    val terms: List<Term> = listOf(),
     @SerializedName("types")
-    val types: List<String>
+    val types: List<String> = listOf()
 )

@@ -44,7 +44,7 @@ object Common {
         return when{
             STORM_IDS.contains(value) -> WeatherEnums.RAINY
             CLOUDY_IDS.contains(value) -> WeatherEnums.CLOUDY
-            DRIZZLE_IDS.contains(value) -> WeatherEnums.CLOUDY
+            DRIZZLE_IDS.contains(value) -> WeatherEnums.RAINY
             RAIN_IDS.contains(value) -> WeatherEnums.RAINY
             CLEAR_IDS.contains(value) -> WeatherEnums.SUNNY
             SNOW_IDS.contains(value) -> WeatherEnums.RAINY
@@ -77,7 +77,6 @@ object Common {
                 daysList.add(days[x])
             }
         }
-        daysList.add(days[currentIndex])
 
         return daysList
     }

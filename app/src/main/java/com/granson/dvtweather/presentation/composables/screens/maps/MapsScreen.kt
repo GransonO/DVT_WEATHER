@@ -351,7 +351,6 @@ fun MapView(
         }
     ) {
         if(list.isEmpty()){
-            baseLogger("The List is Okay", list)
             Marker(
                 position = LatLng(userCurrentLocation.latitude, userCurrentLocation.longitude),
                 title = "Current Location",
@@ -486,7 +485,6 @@ fun LocationView(
     val fetchWeather = {
         scope.launch {
             if(screensViewModel.getInternetStatus(context)){
-                baseLogger("Going Online", "Online")
                 // Going offline
                 // if(!hasRunOnce.value){
                     screensViewModel.getWeatherInfo(
@@ -714,7 +712,6 @@ fun AddLocation(
             screensViewModel.currentWeather.collect {
                 val value = it.data
                 if(value != null){
-                    baseLogger("Anything yet", it.toString())
                     weatherRequest.value = value
                     selectedPlace.value = selectedPlace.value.copy(
                         placeWeather = value,
@@ -722,7 +719,6 @@ fun AddLocation(
                         date = getCurrentDate.invoke()
                     )
                     selectedPlaceWeatherEnums.value = getWeatherEnum(value.current.weather[0].id)
-                    baseLogger("Selected Weather", value)
                     isFetchingDetails.value = false
                 }
             }
@@ -759,7 +755,7 @@ fun AddLocation(
                         screensViewModel.isRequesting.value = true
                         screensViewModel.placeSearch(
                             it,
-                            context
+                            context.resources.getString(R.string.maps_api_key)
                         )
                     }
                 }
