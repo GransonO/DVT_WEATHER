@@ -1,6 +1,8 @@
 package com.granson.dvtweather.di
 
 import android.content.Context
+import com.chuckerteam.chucker.api.ChuckerCollector
+import com.chuckerteam.chucker.api.ChuckerInterceptor
 import com.granson.dvtweather.data.api.PlaceService
 import com.granson.dvtweather.data.api.WeatherService
 import com.granson.dvtweather.utils.APIUtils.PLACE_URL
@@ -32,12 +34,21 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideHttpClient(
-        loggingInterceptor: HttpLoggingInterceptor
+        loggingInterceptor: HttpLoggingInterceptor,
+        context: Context
     ): OkHttpClient {
         val builder = OkHttpClient.Builder()
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
+            .addInterceptor(
+                ChuckerInterceptor.Builder(context)
+                    .collector(ChuckerCollector(context))
+                    .maxContentLength(250000L)
+                    .redactHeaders(emptySet())
+                    .alwaysReadResponseBody(false)
+                    .build()
+            )
             .addInterceptor { chain ->
                 val authRequest = chain.request().newBuilder()
                     .header("Content-Type", "application/json")

@@ -19,12 +19,12 @@ import com.granson.dvtweather.utils.Common.baseLogger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+@Suppress("DEPRECATION") // Will be omitted later
 @HiltViewModel
 class ScreensViewModel @Inject constructor(
     private val weatherRepository: WeatherRepository,
@@ -70,7 +70,6 @@ class ScreensViewModel @Inject constructor(
                 lon = lon,
                 apiKey = context.resources.getString(R.string.weather_api_key)
             ).collect{
-                baseLogger("It Value", it is Resource.Success)
                 when(it){
                     is Resource.Success -> {
                         _currentWeather.emit(
@@ -108,12 +107,13 @@ class ScreensViewModel @Inject constructor(
 
     fun placeSearch(
         char: String,
-        context: Context
+        key: String
     ){
         viewModelScope.launch {
+            println("Request got here --> Request made")
             placeRepository.placeSearch(
                 name = char,
-                apiKey = context.resources.getString(R.string.maps_api_key)
+                apiKey = key
             ).collect{
                 when(it){
                     is Resource.Success -> {
@@ -186,12 +186,11 @@ class ScreensViewModel @Inject constructor(
     }
 
     fun savePlace(place: SavedPlace){
-
         CoroutineScope(Dispatchers.IO).launch {
             dataRepository.addFavouritePlace(place).collect{
                 when (it) {
                     is Resource.Success -> {
-                        baseLogger("The Saved Places Yay", it.data)
+                        baseLogger("The Saved Places", it.data)
                         getSavedPlaces()
                         isAddedSuccess.value = true
                     }
@@ -205,6 +204,7 @@ class ScreensViewModel @Inject constructor(
     }
 
     fun updatePlace(place: SavedPlace){
+        baseLogger("The Places Updated", place)
         CoroutineScope(Dispatchers.IO).launch {
             dataRepository.updateFavouritePlaces(place).collect{
                 when (it) {
@@ -227,7 +227,6 @@ class ScreensViewModel @Inject constructor(
                 when (it) {
                     is Resource.Success -> {
 
-                        baseLogger("The Place deleted", it.data)
                         getSavedPlaces()
                         isDeleted.value = true
                     }

@@ -56,13 +56,15 @@ import kotlin.random.Random
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun MapsScreen(
-    isOffline: Boolean = false
+    isOffline: Boolean = false,
+    onLineCall: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
     val backdropScaffoldState = rememberBackdropScaffoldState(BackdropValue.Revealed)
     val sheetState = remember { mutableStateOf(PlacesSheetEnums.ADD) }
     val listView = remember { mutableStateOf(true) }
     val screensViewModel = hiltViewModel<ScreensViewModel>()
+    val context = LocalContext.current
 
     LaunchedEffect(key1 = "Fetch Saved Places"){
         // Fetch List
@@ -81,211 +83,240 @@ fun MapsScreen(
         selectedWeatherEnums.value = mainWeatherEnums.value
     }
 
-    BackdropScaffold(
-        scaffoldState = backdropScaffoldState,
-        appBar = {
+    Box(
+        modifier = Modifier.fillMaxSize()
+    ){
+        BackdropScaffold(
+            scaffoldState = backdropScaffoldState,
+            appBar = {
 
-        },
-        peekHeight = 25.dp,
-        headerHeight = 0.dp,
-        backLayerBackgroundColor = backgroundColorExt(
-            if(backdropScaffoldState.currentValue == BackdropValue.Concealed) selectedPlaceWeatherEnums.value else selectedWeatherEnums.value
-        ),
-        backLayerContent = {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.BottomStart
-            ){
-                Image(
-                    modifier = Modifier.fillMaxWidth(),
-                    painter = painterResource(imageToDisplay(selectedWeatherEnums.value)),
-                    contentDescription = "Back Image",
-                    alignment = Alignment.TopStart,
-                    contentScale = ContentScale.FillWidth
-                )
-
-                val width = LocalConfiguration.current.screenWidthDp
-
-                Column(
-                    modifier = Modifier.fillMaxSize().padding(
-                        top = 10.dp,
-                        bottom = 10.dp,
-                        start = 16.dp,
-                        end = 16.dp
-                    )
-                ) {
-                    Row(
-                        Modifier.fillMaxWidth().padding(bottom = 16.dp, top = 35.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            modifier = Modifier,
-                            text = if(isOffline) "Offline Mode" else "Favourite Places",
-                            style = Typography.body1.copy(
-                                color = Color.White,
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        )
-                        if(!isOffline)
-                            Card(
-                                modifier = Modifier.clickable{
-                                    sheetState.value = PlacesSheetEnums.ADD
-                                    openSheet.invoke()
-                                },
-                                shape = RoundedCornerShape(25.dp),
-                                backgroundColor = Color.White,
-                                elevation = 10.dp
-                            ) {
-                                Box(
-                                    modifier = Modifier.padding(5.dp),
-                                    contentAlignment = Alignment.Center
-                                ){
-                                    Icon(Icons.Rounded.Add, "", tint = backgroundColorExt(selectedPlaceWeatherEnums.value))
-                                }
-                            }
-                    }
-
-                    if(!isOffline)
-                        Row(
-                            modifier = Modifier.fillMaxWidth().height(56.dp),
-                            horizontalArrangement = Arrangement.Center
-                        ){
-                        Box(
-                            modifier = Modifier.width((width * 0.45).dp).height(45.dp).clip(shape = RoundedCornerShape(10.dp)).background(
-                                    color = if(listView.value) backgroundColor(
-                                        selectedPlaceWeatherEnums.value
-                                    ).copy(alpha = 0.3f) else Color.Transparent).clickable {
-                                listView.value = true
-                            },
-                            contentAlignment = Alignment.Center
-                        ){
-                            Text(
-                                text = "List",
-                                style = Typography.body1.copy(
-                                    color = Color.White,
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            )
-                        }
-
-                        Box(
-                            modifier = Modifier.width((width * 0.45).dp).height(45.dp).clip(shape = RoundedCornerShape(10.dp)).background(
-                                color = if(!listView.value) backgroundColor(selectedPlaceWeatherEnums.value).copy(alpha = 0.3f) else Color.Transparent
-                            ).clickable {
-                                listView.value = false
-                            },
-                            contentAlignment = Alignment.Center
-                        ){
-                            Text(
-                                text = "Map",
-                                style = Typography.body1.copy(
-                                    color = Color.White,
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            )
-                        }
-                    }
-
-                    if(listView.value)
-                        if(screensViewModel.isLoading.value){
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ){
-                                CircularProgressIndicator(
-                                    color = Color.White,
-                                    strokeWidth = 2.dp
-                                )
-                            }
-                        }else{
-                            Column(
-                                modifier = Modifier.fillMaxSize().verticalScroll(
-                                    rememberScrollState())
-                            ){
-                                ListView(
-                                    screensViewModel.listSavedPlaces.value
-                                ) {
-                                    sheetState.value = PlacesSheetEnums.VIEW
-                                    screensViewModel.selectedPlace.value = it
-                                    openSheet.invoke()
-                                }
-                            }
-                        }
-
-                    else
-                        Box(
-                            modifier = Modifier.fillMaxSize()
-                        ){
-                            MapView(
-                                screensViewModel.listSavedPlaces.value
-                            ){
-                                if(it.name != ""){
-                                    sheetState.value = PlacesSheetEnums.VIEW
-                                    screensViewModel.selectedPlace.value = it
-                                    openSheet.invoke()
-                                }
-                            }
-                        }
-                }
-            }
-        },
-        frontLayerContent = {
-            Card(
-                modifier = Modifier.fillMaxSize(),
-                elevation = 13.dp,
-                contentColor = backgroundColorExt(selectedPlaceWeatherEnums.value)
-            ){
+            },
+            peekHeight = 25.dp,
+            headerHeight = 0.dp,
+            backLayerBackgroundColor = backgroundColorExt(
+                if(backdropScaffoldState.currentValue == BackdropValue.Concealed) selectedPlaceWeatherEnums.value else selectedWeatherEnums.value
+            ),
+            backLayerContent = {
                 Box(
-                    modifier = Modifier.fillMaxSize().background(color = backgroundColorExt(selectedPlaceWeatherEnums.value)),
+                    modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.BottomStart
                 ){
                     Image(
                         modifier = Modifier.fillMaxWidth(),
-                        painter = painterResource(imageToDisplay(selectedPlaceWeatherEnums.value)),
+                        painter = painterResource(imageToDisplay(selectedWeatherEnums.value)),
                         contentDescription = "Back Image",
                         alignment = Alignment.TopStart,
-                        contentScale = ContentScale.FillWidth,
-                        alpha = if (selectedPlaceWeatherEnums.value == selectedWeatherEnums.value) 0.3f else 1f
+                        contentScale = ContentScale.FillWidth
                     )
 
+                    val width = LocalConfiguration.current.screenWidthDp
+
                     Column(
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Spacer(modifier = Modifier.height(15.dp))
-                        Box(
-                            modifier = Modifier
-                                .align(Alignment.CenterHorizontally)
-                                .clip(RoundedCornerShape(4.dp))
-                                .width(48.dp)
-                                .background(Color.White)
-                                .height(4.dp)
+                        modifier = Modifier.fillMaxSize().padding(
+                            top = 10.dp,
+                            bottom = 10.dp,
+                            start = 16.dp,
+                            end = 16.dp
                         )
-                        Spacer(modifier = Modifier.height(15.dp))
-                        when(sheetState.value){
-                            PlacesSheetEnums.ADD -> {
-                                AddLocation(
-                                    screensViewModel = screensViewModel,
-                                    showMap = backdropScaffoldState.currentValue == BackdropValue.Concealed
+                    ) {
+                        Row(
+                            Modifier.fillMaxWidth().padding(bottom = 16.dp, top = 35.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                modifier = Modifier,
+                                text = if(isOffline) "Offline Mode" else "Favourite Places",
+                                style = Typography.body1.copy(
+                                    color = Color.White,
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.SemiBold
                                 )
+                            )
+                            if(!isOffline)
+                                Card(
+                                    modifier = Modifier.clickable{
+                                        sheetState.value = PlacesSheetEnums.ADD
+                                        openSheet.invoke()
+                                    },
+                                    shape = RoundedCornerShape(25.dp),
+                                    backgroundColor = Color.White,
+                                    elevation = 10.dp
+                                ) {
+                                    Box(
+                                        modifier = Modifier.padding(5.dp),
+                                        contentAlignment = Alignment.Center
+                                    ){
+                                        Icon(Icons.Rounded.Add, "", tint = backgroundColorExt(selectedPlaceWeatherEnums.value))
+                                    }
+                                }
+                        }
+
+                        if(!isOffline)
+                            Row(
+                                modifier = Modifier.fillMaxWidth().height(56.dp),
+                                horizontalArrangement = Arrangement.Center
+                            ){
+                                Box(
+                                    modifier = Modifier.width((width * 0.45).dp).height(45.dp).clip(shape = RoundedCornerShape(10.dp)).background(
+                                        color = if(listView.value) backgroundColor(
+                                            selectedPlaceWeatherEnums.value
+                                        ).copy(alpha = 0.3f) else Color.Transparent).clickable {
+                                        listView.value = true
+                                    },
+                                    contentAlignment = Alignment.Center
+                                ){
+                                    Text(
+                                        text = "List",
+                                        style = Typography.body1.copy(
+                                            color = Color.White,
+                                            fontSize = 18.sp,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    )
+                                }
+
+                                Box(
+                                    modifier = Modifier.width((width * 0.45).dp).height(45.dp).clip(shape = RoundedCornerShape(10.dp)).background(
+                                        color = if(!listView.value) backgroundColor(selectedPlaceWeatherEnums.value).copy(alpha = 0.3f) else Color.Transparent
+                                    ).clickable {
+                                        listView.value = false
+                                    },
+                                    contentAlignment = Alignment.Center
+                                ){
+                                    Text(
+                                        text = "Map",
+                                        style = Typography.body1.copy(
+                                            color = Color.White,
+                                            fontSize = 18.sp,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    )
+                                }
                             }
-                            PlacesSheetEnums.VIEW -> {
-                                LocationView(
-                                    screensViewModel = screensViewModel,
-                                    showMap = backdropScaffoldState.currentValue == BackdropValue.Concealed,
-                                    placeItem = screensViewModel.selectedPlace.value
-                                )
+
+                        if(listView.value)
+                            if(screensViewModel.isLoading.value){
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ){
+                                    CircularProgressIndicator(
+                                        color = Color.White,
+                                        strokeWidth = 2.dp
+                                    )
+                                }
+                            }else{
+                                Column(
+                                    modifier = Modifier.fillMaxSize().verticalScroll(
+                                        rememberScrollState())
+                                ){
+                                    ListView(
+                                        screensViewModel.listSavedPlaces.value
+                                    ) {
+                                        sheetState.value = PlacesSheetEnums.VIEW
+                                        screensViewModel.selectedPlace.value = it
+                                        openSheet.invoke()
+                                    }
+                                }
+                            }
+
+                        else
+                            Box(
+                                modifier = Modifier.fillMaxSize()
+                            ){
+                                MapView(
+                                    screensViewModel.listSavedPlaces.value
+                                ){
+                                    if(it.name != ""){
+                                        sheetState.value = PlacesSheetEnums.VIEW
+                                        screensViewModel.selectedPlace.value = it
+                                        openSheet.invoke()
+                                    }
+                                }
+                            }
+                    }
+                }
+            },
+            frontLayerContent = {
+                Card(
+                    modifier = Modifier.fillMaxSize(),
+                    elevation = 13.dp,
+                    contentColor = backgroundColorExt(selectedPlaceWeatherEnums.value)
+                ){
+                    Box(
+                        modifier = Modifier.fillMaxSize().background(color = backgroundColorExt(selectedPlaceWeatherEnums.value)),
+                        contentAlignment = Alignment.BottomStart
+                    ){
+                        Image(
+                            modifier = Modifier.fillMaxWidth(),
+                            painter = painterResource(imageToDisplay(selectedPlaceWeatherEnums.value)),
+                            contentDescription = "Back Image",
+                            alignment = Alignment.TopStart,
+                            contentScale = ContentScale.FillWidth,
+                            alpha = if (selectedPlaceWeatherEnums.value == selectedWeatherEnums.value) 0.3f else 1f
+                        )
+
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Spacer(modifier = Modifier.height(15.dp))
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.CenterHorizontally)
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .width(48.dp)
+                                    .background(Color.White)
+                                    .height(4.dp)
+                            )
+                            Spacer(modifier = Modifier.height(15.dp))
+                            when(sheetState.value){
+                                PlacesSheetEnums.ADD -> {
+                                    AddLocation(
+                                        screensViewModel = screensViewModel,
+                                        showMap = backdropScaffoldState.currentValue == BackdropValue.Concealed
+                                    )
+                                }
+                                PlacesSheetEnums.VIEW -> {
+                                    LocationView(
+                                        screensViewModel = screensViewModel,
+                                        showMap = backdropScaffoldState.currentValue == BackdropValue.Concealed,
+                                        placeItem = screensViewModel.selectedPlace.value
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
+        )
+
+        if(screensViewModel.getInternetStatus(context) &&  isOffline ){
+            Card(
+                modifier = Modifier.fillMaxWidth().align(alignment = Alignment.BottomCenter).padding(bottom = 5.dp, start = 16.dp, end = 16.dp).clickable {
+                    onLineCall.invoke()
+                },
+                backgroundColor = backgroundColorExt(selectedWeatherEnums.value),
+                border = BorderStroke(
+                    width = 1.dp,
+                    color = backgroundColorExt(selectedWeatherEnums.value),
+                ),
+                shape = RoundedCornerShape(10.dp)
+            ){
+                Text(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp),
+                    text = "Network available, go online",
+                    style = Typography.body1.copy(
+                        color = Color.White,
+                        fontSize = 18.sp
+                    ),
+                    textAlign = TextAlign.Center
+                )
+            }
         }
-    )
+    }
+
 }
 
 @Composable
@@ -309,16 +340,17 @@ fun MapView(
             cameraPositionState.move(CameraUpdateFactory.newLatLngBounds(builder.build(), 64))
         }
     }
+
     GoogleMap(
         modifier = Modifier.fillMaxSize().clip(shape = RoundedCornerShape(10.dp)),
         cameraPositionState = cameraPositionState,
         onMapLoaded = {
-            refreshMarker.invoke()
+            if(list.isNotEmpty()){
+                refreshMarker.invoke()
+            }
         }
     ) {
-        baseLogger("The List", list)
         if(list.isEmpty()){
-            baseLogger("The List is Okay", list)
             Marker(
                 position = LatLng(userCurrentLocation.latitude, userCurrentLocation.longitude),
                 title = "Current Location",
@@ -328,7 +360,6 @@ fun MapView(
             )
         }
         else{
-            baseLogger("The List is Error", list)
             for (marker in list){
                 Marker(
                     position = LatLng(marker.location.latitude, marker.location.longitude),
@@ -443,19 +474,19 @@ fun LocationView(
     showMap: Boolean = false,
     placeItem: SavedPlace
 ){
+
+    baseLogger("The Place Item Is",  placeItem)
     val weatherRequest = remember { mutableStateOf(WeatherRequest()) }
     val hasWeatherValues = remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val hasRunOnce = remember {mutableStateOf(false)}
 
-    val selectedLocal = {
+    val fetchWeather = {
         scope.launch {
-
             if(screensViewModel.getInternetStatus(context)){
-                baseLogger("Going Online", "Online")
                 // Going offline
-                if(!hasRunOnce.value){
+                // if(!hasRunOnce.value){
                     screensViewModel.getWeatherInfo(
                         lat = placeItem.location.latitude.toFloat(),
                         lon = placeItem.location.longitude.toFloat(),
@@ -473,9 +504,10 @@ fun LocationView(
                             screensViewModel.updatePlace(updateItem)
                         }
                     }
-                }
+                // }
             }else{
                 baseLogger("Going offline", "Offline")
+                baseLogger("Going offline",  placeItem)
                 // Going offline
                 weatherRequest.value = placeItem.placeWeather!!
                 selectedPlaceWeatherEnums.value = getWeatherEnum(placeItem.lastWeatherID)
@@ -483,7 +515,7 @@ fun LocationView(
             }
         }
     }
-    selectedLocal.invoke()
+    fetchWeather.invoke()
 
     val markerPosition = LatLng(placeItem.location.latitude,placeItem.location.longitude)
 
@@ -680,7 +712,6 @@ fun AddLocation(
             screensViewModel.currentWeather.collect {
                 val value = it.data
                 if(value != null){
-                    baseLogger("Anything yet", it.toString())
                     weatherRequest.value = value
                     selectedPlace.value = selectedPlace.value.copy(
                         placeWeather = value,
@@ -688,7 +719,6 @@ fun AddLocation(
                         date = getCurrentDate.invoke()
                     )
                     selectedPlaceWeatherEnums.value = getWeatherEnum(value.current.weather[0].id)
-                    baseLogger("Selected Weather", value)
                     isFetchingDetails.value = false
                 }
             }
@@ -725,7 +755,7 @@ fun AddLocation(
                         screensViewModel.isRequesting.value = true
                         screensViewModel.placeSearch(
                             it,
-                            context
+                            context.resources.getString(R.string.maps_api_key)
                         )
                     }
                 }

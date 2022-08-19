@@ -5,6 +5,7 @@ import com.granson.dvtweather.data.repository.BaseRepository
 import com.granson.dvtweather.data.repository.Resource
 import com.granson.dvtweather.data.repository.repos.DataRepository
 import com.granson.dvtweather.presentation.composables.screens.viewModels.models.SavedPlace
+import com.granson.dvtweather.utils.Common.baseLogger
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
@@ -21,6 +22,7 @@ class DataRepositoryImpl @Inject constructor(
     }
 
     override suspend fun updateFavouritePlaces(place: SavedPlace): Flow<Resource<Int>> {
+        baseLogger("The updated place is", place)
         return databaseCall { dao.weatherDao.updatePlace(place) }
     }
 

@@ -73,7 +73,6 @@ fun WeatherScreen() {
                             ),
                     ) {
                         dailyWeather.value.forEach {
-                            baseLogger("Count", dailyWeather.value.indexOf(it))
                             DateDisplay(
                                 date = Common.daysOrder.value[dailyWeather.value.indexOf(it)],
                                 weather = getWeatherEnum(it.weather[0].id),
