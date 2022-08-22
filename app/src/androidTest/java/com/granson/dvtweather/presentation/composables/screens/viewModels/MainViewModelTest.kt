@@ -1,15 +1,11 @@
 package com.granson.dvtweather.presentation.composables.screens.viewModels
 
 import android.content.Context
-import android.location.Location
 import android.location.LocationManager
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.common.truth.Truth.assertThat
 import com.granson.dvtweather.presentation.MainViewModel
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Rule
 
