@@ -9,11 +9,15 @@ A robust weather app
 - Save locations of interest and view them in a list and map 
 - View saved locations in offline mode
 
+- Mimimum supported Android SDK 21
+
 ## Setup
 
 Navigate to your projets string.xml file
-- Add your [google maps key](https://developers.google.com/maps/documentation/android-sdk/get-api-key)
+- Add your [google maps key](https://developers.google.com/maps/documentation/android-sdk/get-api-key) (Only for places request)
 - Add your [OpenWeather API key](https://openweathermap.org/)
+
+Add Maps API key inside your local.properties file 
 
 # Build Architecture
 
@@ -74,8 +78,3 @@ More to be added
 ![WhatsApp Image 2022-08-13 at 10 59 08 AM](https://user-images.githubusercontent.com/41139653/185922472-55ef33f2-0945-49e0-8049-7f968ce9835e.jpeg)
 
 ![WhatsApp Image 2022-08-13 at 10 58 58 AM](https://user-images.githubusercontent.com/41139653/185922440-61d48ec5-bb8f-4f02-939e-d2b98a7a3cdd.jpeg)
-
-
-
-
-
