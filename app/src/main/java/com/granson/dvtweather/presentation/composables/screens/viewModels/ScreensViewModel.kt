@@ -19,6 +19,7 @@ import com.granson.dvtweather.utils.Common.baseLogger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
@@ -32,7 +33,7 @@ class ScreensViewModel @Inject constructor(
     private val dataRepository: DataRepository
 ): ViewModel() {
 
-    private var _currentWeather = MutableStateFlow(RequestState())
+    private var _currentWeather = MutableSharedFlow<RequestState>()
     var  currentWeather= _currentWeather.asSharedFlow()
 
     val queryPlaces = mutableStateOf(AutoComplete())
@@ -48,7 +49,7 @@ class ScreensViewModel @Inject constructor(
     val placeDetails = _placeDetails.asSharedFlow()
 
     val isAddedSuccess = mutableStateOf(false)
-    private val isUpdated = mutableStateOf(false)
+    val isUpdated = mutableStateOf(false)
     val isDeleted = mutableStateOf(false)
     val dbRequestError = mutableStateOf(false)
     val requestError = mutableStateOf(false)
@@ -62,13 +63,13 @@ class ScreensViewModel @Inject constructor(
     fun getWeatherInfo(
         lat: Float,
         lon: Float,
-        context: Context
+        key: String
     ){
         viewModelScope.launch {
             weatherRepository.getCurrentWeather(
                 lat = lat,
                 lon = lon,
-                apiKey = context.resources.getString(R.string.weather_api_key)
+                apiKey = key
             ).collect{
                 when(it){
                     is Resource.Success -> {
@@ -81,7 +82,6 @@ class ScreensViewModel @Inject constructor(
                         )
                     }
                     is Resource.Error -> {
-
                         _currentWeather.emit(
                             RequestState(
                                 isLoading = false,
@@ -91,14 +91,13 @@ class ScreensViewModel @Inject constructor(
                         )
                     }
                     is Resource.Loading -> {
-
-//                        _currentWeather.emit(
-//                            RequestState(
-//                                isLoading = it.isLoading,
-//                                data = null,
-//                                error = null
-//                            )
-//                        )
+                        _currentWeather.emit(
+                            RequestState(
+                                isLoading = it.isLoading,
+                                data = null,
+                                error = null
+                            )
+                        )
                     }
                 }
             }
@@ -135,12 +134,12 @@ class ScreensViewModel @Inject constructor(
 
     fun getPlaceDetails(
         placeId: String,
-        context: Context
+        key: String
     ){
         viewModelScope.launch {
             placeRepository.placeDetails(
                 placeId = placeId,
-                apiKey = context.resources.getString(R.string.maps_api_key)
+                apiKey = key
             ).collect{
                 when(it){
                     is Resource.Success -> {
@@ -156,7 +155,7 @@ class ScreensViewModel @Inject constructor(
                         }
                     }
                     is Resource.Error -> {
-
+                        dbRequestError.value = true
                     }
                     is Resource.Loading -> {
 
@@ -191,8 +190,8 @@ class ScreensViewModel @Inject constructor(
                 when (it) {
                     is Resource.Success -> {
                         baseLogger("The Saved Places", it.data)
-                        getSavedPlaces()
                         isAddedSuccess.value = true
+                        getSavedPlaces()
                     }
                     else -> {
                         baseLogger("The Saved Places error", it.message)
@@ -204,12 +203,10 @@ class ScreensViewModel @Inject constructor(
     }
 
     fun updatePlace(place: SavedPlace){
-        baseLogger("The Places Updated", place)
         CoroutineScope(Dispatchers.IO).launch {
             dataRepository.updateFavouritePlaces(place).collect{
                 when (it) {
                     is Resource.Success -> {
-                        baseLogger("The Places Updated", it.data)
                         getSavedPlaces()
                         isUpdated.value = true
                     }

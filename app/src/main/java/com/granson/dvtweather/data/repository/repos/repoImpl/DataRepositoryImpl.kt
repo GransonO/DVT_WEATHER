@@ -22,7 +22,7 @@ class DataRepositoryImpl @Inject constructor(
     }
 
     override suspend fun updateFavouritePlaces(place: SavedPlace): Flow<Resource<Int>> {
-        baseLogger("The updated place is", place)
+        baseLogger("The updated updateFavouritePlaces : ", place)
         return databaseCall { dao.weatherDao.updatePlace(place) }
     }
 

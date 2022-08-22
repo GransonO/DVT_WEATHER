@@ -6,7 +6,7 @@ import com.granson.dvtweather.data.repository.repos.WeatherRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
-class FakeWeatherRepositoryImpl: WeatherRepository {
+class FakeWeatherRepository: WeatherRepository {
 
     override suspend fun getCurrentWeather(
         lat: Float,

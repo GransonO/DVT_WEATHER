@@ -40,6 +40,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.google.android.gms.maps.model.LatLng
+import com.granson.dvtweather.R
 import com.granson.dvtweather.data.models.LocationDetails
 import com.granson.dvtweather.presentation.composables.backgroundColor
 import com.granson.dvtweather.presentation.composables.backgroundColorExt
@@ -107,7 +108,7 @@ class MainActivity : ComponentActivity() {
                         screensViewModel.getWeatherInfo(
                             lat = userCurrentLocation.latitude.toFloat(),
                             lon = userCurrentLocation.longitude.toFloat(),
-                            context = context
+                            context.resources.getString(R.string.weather_api_key)
                         )
                         screensViewModel.currentWeather.collect {
                                 val value = it.data
@@ -205,7 +206,7 @@ class MainActivity : ComponentActivity() {
                                     screensViewModel.listSavedPlaces.value.isNotEmpty() -> {
                                         StarterPage(
                                             firstText = "Oh,",
-                                            secondText = "Looks like there no Internet connection! Would you like to start offline mode?",
+                                            secondText = "Looks like there's no Internet connection! Would you like to start offline mode?",
                                             showButton = true,
                                             buttonText = "Lets go offline",
                                             onClick = {

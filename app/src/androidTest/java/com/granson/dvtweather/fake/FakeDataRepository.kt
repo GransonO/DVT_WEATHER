@@ -2,17 +2,28 @@ package com.granson.dvtweather.fake
 
 import com.granson.dvtweather.data.repository.Resource
 import com.granson.dvtweather.data.repository.repos.DataRepository
+import com.granson.dvtweather.presentation.composables.screens.viewModels.models.PlaceLocation
 import com.granson.dvtweather.presentation.composables.screens.viewModels.models.SavedPlace
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
-class FakeDataRepositoryImpl: DataRepository {
+class FakeDataRepository: DataRepository {
 
-    private val places = mutableListOf<SavedPlace>()
+    private val places = mutableListOf(
+        SavedPlace(
+            location = PlaceLocation(-2.09383, 37.89887),
+            name = "DB Test Place 1",
+            placeId = "123tester"
+        )
+    )
 
     override suspend fun addFavouritePlace(place: SavedPlace): Flow<Resource<Long>> = flow {
-        places.add(place)
-        emit(Resource.Success(1L))
+        try {
+            places.add(place)
+            emit(Resource.Success(1L))
+        }catch (e: Exception){
+            emit(Resource.Error(message = "Could not add place to favourites"))
+        }
     }
 
     override suspend fun getAllFavouritePlaces(): Flow<Resource<List<SavedPlace>>> = flow {
