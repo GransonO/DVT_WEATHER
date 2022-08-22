@@ -2,6 +2,6 @@
     <string name="app_name">DVT Weather</string>
     <string name="weather_screen">Weather</string>
     <string name="maps_screen">Places</string>
-    <string name="maps_api_key"></string>
+    <string name="places_api_key"></string>
     <string name="weather_api_key"></string>
 </resources>

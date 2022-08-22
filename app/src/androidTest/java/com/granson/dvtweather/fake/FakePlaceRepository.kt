@@ -13,9 +13,9 @@ import com.granson.dvtweather.data.repository.repos.PlaceRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
-class FakePlaceRepositoryImpl: PlaceRepository {
+class FakePlaceRepository: PlaceRepository {
 
-    var placeRequest = AutoComplete(
+    private var placeRequest = AutoComplete(
             predictions = listOf(
                 Prediction(
                     description = "Test Place 1",

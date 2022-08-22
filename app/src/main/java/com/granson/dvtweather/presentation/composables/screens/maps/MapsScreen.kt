@@ -411,6 +411,7 @@ fun LocationCard(
     placeItem: SavedPlace,
     openSheet : (SavedPlace) -> Unit,
 ){
+    baseLogger("In the list id: ${placeItem.lastWeatherID}", "name: ${placeItem.name}" )
     Card(
         modifier = Modifier.fillMaxSize().padding(top = 10.dp).clickable {
             openSheet.invoke(placeItem)
@@ -475,39 +476,48 @@ fun LocationView(
     placeItem: SavedPlace
 ){
 
-    baseLogger("The Place Item Is",  placeItem)
-    val weatherRequest = remember { mutableStateOf(WeatherRequest()) }
-    val hasWeatherValues = remember { mutableStateOf(false) }
+    baseLogger("The selected Place Item is", placeItem.name)
+
+    val weatherRequest =  remember { mutableStateOf(placeItem.placeWeather)}
+    val hasWeatherValues = remember {mutableStateOf(false)}
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val hasRunOnce = remember {mutableStateOf(false)}
+    val runTimes = remember {mutableStateOf(0)}
+    val collectTimes = remember {mutableStateOf(0)}
 
-    val fetchWeather = {
+    LaunchedEffect(key1 = placeItem){
+        // Values reset
+        runTimes.value = 0
+        collectTimes.value = 0
+        hasRunOnce.value = false
+        weatherRequest.value = placeItem.placeWeather
+
         scope.launch {
             if(screensViewModel.getInternetStatus(context)){
-                // Going offline
-                // if(!hasRunOnce.value){
-                    screensViewModel.getWeatherInfo(
-                        lat = placeItem.location.latitude.toFloat(),
-                        lon = placeItem.location.longitude.toFloat(),
-                        context = context
-                    )
-                    hasRunOnce.value = true
-                    screensViewModel.currentWeather.collect {
-                        val value = it.data
-                        if(value != null){
-                            weatherRequest.value = value
-                            selectedPlaceWeatherEnums.value = getWeatherEnum(value.current.weather[0].id)
-                            hasWeatherValues.value = true
+                screensViewModel.getWeatherInfo(
+                    lat = placeItem.location.latitude.toFloat(),
+                    lon = placeItem.location.longitude.toFloat(),
+                    context.resources.getString(R.string.weather_api_key)
+                )
 
-                            val updateItem = placeItem.copy(placeWeather = value, date = getCurrentDate.invoke())
+                screensViewModel.currentWeather.collectLatest {
+                    val value = it.data
+                    if(!it.isLoading && value != null){
+                        collectTimes.value = collectTimes.value + 1
+
+                        weatherRequest.value = value
+                        selectedPlaceWeatherEnums.value = getWeatherEnum(value.current.weather[0].id)
+                        hasWeatherValues.value = true
+
+                        val updateItem = placeItem.copy(placeWeather = value, lastWeatherID = value.current.weather[0].id, date = getCurrentDate.invoke())
+
+                        if(updateItem.placeId == placeItem.placeId){
                             screensViewModel.updatePlace(updateItem)
                         }
                     }
-                // }
+                }
             }else{
-                baseLogger("Going offline", "Offline")
-                baseLogger("Going offline",  placeItem)
                 // Going offline
                 weatherRequest.value = placeItem.placeWeather!!
                 selectedPlaceWeatherEnums.value = getWeatherEnum(placeItem.lastWeatherID)
@@ -515,7 +525,6 @@ fun LocationView(
             }
         }
     }
-    fetchWeather.invoke()
 
     val markerPosition = LatLng(placeItem.location.latitude,placeItem.location.longitude)
 
@@ -538,7 +547,7 @@ fun LocationView(
 
                     Text(
                         modifier = Modifier.align(alignment = Alignment.BottomCenter).padding(top = 10.dp),
-                        text = weatherRequest.value.current.temp.roundToInt().toString(),
+                        text = weatherRequest.value!!.current.temp.roundToInt().toString(),
                         style = Typography.body1.copy(
                             color = Color.White,
                             fontSize = 45.sp,
@@ -552,7 +561,7 @@ fun LocationView(
                 }
 
                 Text(
-                    text = getWeatherEnum(weatherRequest.value.current.weather[0].id).name,
+                    text = getWeatherEnum(weatherRequest.value!!.current.weather[0].id).name,
                     style = Typography.body1.copy(
                         color = Color.White,
                         fontSize = 30.sp
@@ -598,10 +607,10 @@ fun LocationView(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ){
 
-                        val todayWeather = weatherRequest.value.daily[0].temp
+                        val todayWeather = weatherRequest.value!!.daily[0].temp
                         TempDisplay("${todayWeather.min.roundToInt()}","Min")
 
-                        TempDisplay(weatherRequest.value.current.temp.roundToInt().toString(), "Current")
+                        TempDisplay(weatherRequest.value!!.current.temp.roundToInt().toString(), "Current")
 
                         TempDisplay("${todayWeather.max.roundToInt()}", "Max")
 
@@ -621,9 +630,9 @@ fun LocationView(
                                 rememberScrollState()
                             ),
                     ) {
-                        weatherRequest.value.daily.forEach {
+                        weatherRequest.value!!.daily.forEach {
                             DateDisplay(
-                                date = Common.daysOrder.value[weatherRequest.value.daily.indexOf(it)],
+                                date = Common.daysOrder.value[weatherRequest.value!!.daily.indexOf(it)],
                                 weather = getWeatherEnum(it.weather[0].id),
                                 temp = it.temp.max.roundToInt().toString()
                             )
@@ -706,7 +715,7 @@ fun AddLocation(
             screensViewModel.getWeatherInfo(
                 lat = selectedPlace.value.location.latitude.toFloat(),
                 lon = selectedPlace.value.location.longitude.toFloat(),
-                context = context
+                context.resources.getString(R.string.weather_api_key)
             )
 
             screensViewModel.currentWeather.collect {
@@ -729,7 +738,7 @@ fun AddLocation(
         scope.launch {
             screensViewModel.getPlaceDetails(
                 placeId = selectedPlace.value.placeId,
-                context
+                context.resources.getString(R.string.places_api_key)
             )
             screensViewModel.placeDetails.collectLatest {
                 fetchingMessage.value = "Got the place, ${it.name}\nFetching weather details"
@@ -755,7 +764,7 @@ fun AddLocation(
                         screensViewModel.isRequesting.value = true
                         screensViewModel.placeSearch(
                             it,
-                            context.resources.getString(R.string.maps_api_key)
+                            context.resources.getString(R.string.places_api_key)
                         )
                     }
                 }
