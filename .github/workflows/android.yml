@@ -45,3 +45,6 @@ jobs:
       uses: paambaati/codeclimate-action@v3.0.0
       env:
         CC_TEST_REPORTER_ID: ${{ secrets.CLIMATE_REPORTER_ID }}
+      with:
+        name: Code Climate Coverage Report
+        path: app/build/outputs/androidTest-results/connected
