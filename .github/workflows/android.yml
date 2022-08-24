@@ -29,22 +29,19 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    - name: Run Unit tests
-      run: bash ./gradlew test --stacktrace
+    - name: Run & Publish tests
+      uses: reactivecircus/android-emulator-runner@v2
+      with:
+        api-level: 31
+        script: ./gradlew connectedCheck
       
-    - name: Upload html test report
+    - name: Upload Test Coverage Report
       uses: actions/upload-artifact@v2
       with:
-        name: index.html
-        path: app/build/reports/tests/testDebugUnitTest/index.html
+        name: Coverage Report
+        path: app/build/reports/coverage/debug
 
-    - name: Upload test report directory
-      uses: actions/upload-artifact@v2
-      with:
-        name: testDebugStuff
-        path: app/build/reports/tests/testDebugUnitTest/
-
-    - name: Test & publish code coverage
+    - name: Publish code coverage
       uses: paambaati/codeclimate-action@v3.0.0
       env:
         CC_TEST_REPORTER_ID: ${{ secrets.CLIMATE_REPORTER_ID }}
