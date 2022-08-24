@@ -45,6 +45,6 @@ jobs:
       uses: paambaati/codeclimate-action@v3.0.0
       env:
         CC_TEST_REPORTER_ID: ${{ secrets.CLIMATE_REPORTER_ID }}
+        JACOCO_SOURCE_PATH: "${{github.workspace}}/src/main/java"
       with:
-        name: Code Climate Coverage Report
-        path: app/build/outputs/androidTest-results/connected
+        coverageLocations: ${{github.workspace}}/target/site/jacoco/jacoco.xml:jacoco
