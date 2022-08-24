@@ -30,6 +30,7 @@ jobs:
       run: chmod +x gradlew
 
     - name: Run & Publish tests
+      uses: reactivecircus/android-emulator-runner@v2
       with:
         api-level: 29
         script: ./gradlew connectedCheck
