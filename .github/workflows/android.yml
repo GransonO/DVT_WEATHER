@@ -41,7 +41,13 @@ jobs:
         name: Coverage Report
         path: app/build/outputs/androidTest-results/connected
 
-    - name: Publish code coverage
+    - name: Upload coverage to Codecov
+      run: |
+        curl -Os https://uploader.codecov.io/latest/macos/codecov
+        chmod +x codecov
+        ./codecov
+
+    - name: Publish Code Climate Code coverage
       uses: paambaati/codeclimate-action@v3.0.0
       env:
         CC_TEST_REPORTER_ID: ${{ secrets.CLIMATE_REPORTER_ID }}
