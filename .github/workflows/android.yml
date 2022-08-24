@@ -43,3 +43,8 @@ jobs:
       with:
         name: testDebugStuff
         path: app/build/reports/tests/testDebugUnitTest/
+
+    - name: Test & publish code coverage
+      uses: paambaati/codeclimate-action@v3.0.0
+      env:
+        CC_TEST_REPORTER_ID: ${{ secrets.CLIMATE_REPORTER_ID }}
