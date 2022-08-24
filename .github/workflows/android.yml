@@ -42,7 +42,4 @@ jobs:
         path: app/build/outputs/androidTest-results/connected
 
     - name: Upload coverage to Codecov
-      run: |
-        curl -Os https://uploader.codecov.io/latest/macos/codecov
-        chmod +x codecov
-        ./codecov
+      uses: codecov/codecov-action@v2
