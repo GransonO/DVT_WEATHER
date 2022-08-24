@@ -21,6 +21,11 @@ jobs:
       with:
         java-version: 11
 
+    - name: Fetch MAPS_API_KEY
+      env:
+        MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_KEY }}
+      run: echo maps_api_key=\"MAPS_API_KEY\" > ./local.properties
+
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
