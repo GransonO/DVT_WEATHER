@@ -47,4 +47,5 @@ jobs:
         CC_TEST_REPORTER_ID: ${{ secrets.CLIMATE_REPORTER_ID }}
         JACOCO_SOURCE_PATH: "${{github.workspace}}/src/main/java"
       with:
+        coverageCommand: ./gradlew connectedCheck
         coverageLocations: ${{github.workspace}}/target/site/jacoco/jacoco.xml:jacoco
