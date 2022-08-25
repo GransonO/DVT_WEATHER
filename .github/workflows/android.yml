@@ -12,7 +12,7 @@ on:
 jobs:
   test:
     name: Run Unit Tests
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
 
     steps:
     - uses: actions/checkout@v3
@@ -29,17 +29,17 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    - name: Run Unit tests
-      run: bash ./gradlew test --stacktrace
-      
-    - name: Upload html test report
-      uses: actions/upload-artifact@v2
+    - name: Run Tests & Compile Reports
+      uses: reactivecircus/android-emulator-runner@v2
       with:
-        name: index.html
-        path: app/build/reports/tests/testDebugUnitTest/index.html
+        api-level: 29
+        script: ./gradlew build jacocoTestReport assembleAndroidTest connectedCheck
 
-    - name: Upload test report directory
+    - name: Upload Test Coverage Report
       uses: actions/upload-artifact@v2
       with:
-        name: testDebugStuff
-        path: app/build/reports/tests/testDebugUnitTest/
+        name: Coverage Report
+        path: app/build/outputs/androidTest-results/connected
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v2
