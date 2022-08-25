@@ -32,15 +32,11 @@ jobs:
     - name: Run General tests
       run: ./gradlew test --cov=./ --cov-report=xml
 
-    - name: Run Tests
+    - name: Run Tests & Compile Reports
       uses: reactivecircus/android-emulator-runner@v2
       with:
         api-level: 29
-        script: ./gradlew build jacocoTestReport assembleAndroidTest
-
-    - name: Compile Reports
-      with:
-        script: ./gradlew connectedCheck
+        script: ./gradlew build jacocoTestReport assembleAndroidTest connectedCheck
 
     - name: Upload Test Coverage Report
       uses: actions/upload-artifact@v2
