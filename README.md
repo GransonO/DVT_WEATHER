@@ -1,5 +1,6 @@
 [![Maintainability](https://api.codeclimate.com/v1/badges/caef349a4227ca3a018c/maintainability)](https://codeclimate.com/github/GransonO/DVT_WEATHER/maintainability)
 [![Test Coverage](https://api.codeclimate.com/v1/badges/caef349a4227ca3a018c/test_coverage)](https://codeclimate.com/github/GransonO/DVT_WEATHER/test_coverage)
+[![codecov](https://codecov.io/gh/GransonO/DVT_WEATHER/branch/Master/graph/badge.svg?token=NDOAO1DSB3)](https://codecov.io/gh/GransonO/DVT_WEATHER)
 
 # DVT WEATHER
 
