@@ -29,12 +29,19 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    - name: Run & Publish tests
+    - name: Run General tests
+      run: ./gradlew test --cov=./ --cov-report=xml
+
+    - name: Run Tests
       uses: reactivecircus/android-emulator-runner@v2
       with:
         api-level: 29
+        script: ./gradlew build jacocoTestReport assembleAndroidTest
+
+    - name: Compile Reports
+      with:
         script: ./gradlew connectedCheck
-      
+
     - name: Upload Test Coverage Report
       uses: actions/upload-artifact@v2
       with:
