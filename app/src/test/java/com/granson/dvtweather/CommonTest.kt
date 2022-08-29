@@ -78,6 +78,7 @@ internal class CommonTest {
         assertThat(Common.getWeatherEnum(302)).isEqualTo(WeatherEnums.RAINY)
         assertThat(Common.getWeatherEnum(502)).isEqualTo(WeatherEnums.RAINY)
         assertThat(Common.getWeatherEnum(602)).isEqualTo(WeatherEnums.RAINY)
+        assertThat(Common.getWeatherEnum(2)).isEqualTo(WeatherEnums.SUNNY)
     }
 
     @Test
