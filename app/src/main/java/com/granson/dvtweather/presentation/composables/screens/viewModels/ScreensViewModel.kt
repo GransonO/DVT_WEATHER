@@ -169,7 +169,7 @@ class ScreensViewModel @Inject constructor(
             dataRepository.getAllFavouritePlaces().collect{
                 when (it) {
                     is Resource.Success -> {
-                        baseLogger("The Saved Places are", it.data)
+                        // baseLogger("The Saved Places are", it.data)
                         val value = it.data
                         isLoading.value = false
                         if(value != null){
@@ -177,7 +177,8 @@ class ScreensViewModel @Inject constructor(
                         }
                     }
                     else -> {
-                        baseLogger("The Saved Places error", it.message)}
+                        // baseLogger("The Saved Places error", it.message)
+                    }
                 }
             }
         }
@@ -188,12 +189,12 @@ class ScreensViewModel @Inject constructor(
             dataRepository.addFavouritePlace(place).collect{
                 when (it) {
                     is Resource.Success -> {
-                        baseLogger("The Saved Places", it.data)
+                        //baseLogger("The Saved Places", it.data)
                         isAddedSuccess.value = true
                         getSavedPlaces()
                     }
                     else -> {
-                        baseLogger("The Saved Places error", it.message)
+                        //baseLogger("The Saved Places error", it.message)
                         dbRequestError.value = true
                     }
                 }

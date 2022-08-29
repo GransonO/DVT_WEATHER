@@ -1,8 +1,7 @@
-package com.granson.dvtweather.presentation.composables.screens.viewModels
+package com.granson.dvtweather
 
 import android.content.Context
 import android.location.LocationManager
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.common.truth.Truth.assertThat
 import com.granson.dvtweather.presentation.MainViewModel
@@ -11,10 +10,11 @@ import org.junit.Rule
 
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 import org.mockito.Mockito
 import org.mockito.Mockito.mock
 
-@RunWith(AndroidJUnit4::class)
+@RunWith(JUnit4::class)
 class MainViewModelTest {
 
     private lateinit var mainViewModel: MainViewModel

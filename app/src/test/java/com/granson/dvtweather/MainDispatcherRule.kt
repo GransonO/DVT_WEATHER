@@ -1,4 +1,4 @@
-package com.granson.dvtweather.presentation.composables.screens.viewModels
+package com.granson.dvtweather
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi

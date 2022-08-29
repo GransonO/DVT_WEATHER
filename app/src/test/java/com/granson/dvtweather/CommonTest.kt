@@ -8,10 +8,8 @@ import com.granson.dvtweather.utils.Common
 import com.granson.dvtweather.utils.Common.CLEAR_IDS
 import com.granson.dvtweather.utils.Common.CLOUDY_IDS
 import com.granson.dvtweather.utils.Common.DRIZZLE_IDS
-import com.granson.dvtweather.utils.Common.RAIN_IDS
 import com.granson.dvtweather.utils.Common.SNOW_IDS
 import com.granson.dvtweather.utils.Common.STORM_IDS
-import com.granson.dvtweather.utils.Common.baseLogger
 import com.granson.dvtweather.utils.Common.mainWeatherEnums
 import com.granson.dvtweather.utils.Common.selectedPlaceWeatherEnums
 import com.granson.dvtweather.utils.Common.selectedWeatherEnums
@@ -80,6 +78,7 @@ internal class CommonTest {
         assertThat(Common.getWeatherEnum(302)).isEqualTo(WeatherEnums.RAINY)
         assertThat(Common.getWeatherEnum(502)).isEqualTo(WeatherEnums.RAINY)
         assertThat(Common.getWeatherEnum(602)).isEqualTo(WeatherEnums.RAINY)
+        assertThat(Common.getWeatherEnum(2)).isEqualTo(WeatherEnums.SUNNY)
     }
 
     @Test
